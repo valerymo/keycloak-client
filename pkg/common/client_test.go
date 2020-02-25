@@ -14,19 +14,20 @@ import (
 )
 
 const (
-	RealmsGetPath                = "/auth/admin/realms/%s"
-	RealmsCreatePath             = "/auth/admin/realms"
-	RealmsDeletePath             = "/auth/admin/realms/%s"
-	UserCreatePath               = "/auth/admin/realms/%s/users"
-	UserDeletePath               = "/auth/admin/realms/%s/users/%s"
-	GroupGetPath                 = "/auth/admin/realms/%s/groups"
-	GroupCreatePath              = "/auth/admin/realms/%s/groups"
-	GroupGetDefaults             = "/auth/admin/realms/%s/default-groups"
-	GroupMakeDefaultPath         = "/auth/admin/realms/%s/default-groups/%s"
-	GroupCreateClientRole        = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
-	GroupGetClientRoles          = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
-	GroupGetAvailableClientRoles = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s/available"
-	TokenPath                    = "/auth/realms/master/protocol/openid-connect/token" // nolint
+	RealmsGetPath                     = "/auth/admin/realms/%s"
+	RealmsCreatePath                  = "/auth/admin/realms"
+	RealmsDeletePath                  = "/auth/admin/realms/%s"
+	UserCreatePath                    = "/auth/admin/realms/%s/users"
+	UserDeletePath                    = "/auth/admin/realms/%s/users/%s"
+	GroupGetPath                      = "/auth/admin/realms/%s/groups"
+	GroupCreatePath                   = "/auth/admin/realms/%s/groups"
+	GroupGetDefaults                  = "/auth/admin/realms/%s/default-groups"
+	GroupMakeDefaultPath              = "/auth/admin/realms/%s/default-groups/%s"
+	GroupCreateClientRole             = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
+	GroupGetClientRoles               = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
+	GroupGetAvailableClientRoles      = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s/available"
+	AuthenticationFlowUpdateExecution = "/auth/admin/realms/%s/authentication/flows/%s/executions"
+	TokenPath                         = "/auth/realms/master/protocol/openid-connect/token" // nolint
 )
 
 func getDummyRealm() *v1alpha1.KeycloakRealm {
@@ -359,6 +360,24 @@ func TestClient_ListAvailableGroupClientRoles(t *testing.T) {
 		withPathAssertion(t, 200, fmt.Sprintf(GroupGetAvailableClientRoles, realm.Spec.Realm.Realm, clientID, groupID)),
 		func(c *Client) {
 			_, err := c.ListAvailableGroupClientRoles(realm.Spec.Realm.Realm, groupID, clientID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_UpdateAuthenticationExecutionForFlow(t *testing.T) {
+	realm := getDummyRealm()
+
+	const (
+		flowAlias string = "test flow"
+	)
+
+	requestPath := fmt.Sprintf(AuthenticationFlowUpdateExecution, realm.Spec.Realm.Realm, flowAlias)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 200, requestPath),
+		func(c *Client) {
+			err := c.UpdateAuthenticationExecutionForFlow(flowAlias, realm.Spec.Realm.Realm, &v1alpha1.AuthenticationExecutionInfo{})
 			assert.NoError(t, err)
 		},
 	)
