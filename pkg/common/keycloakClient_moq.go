@@ -9,57 +9,59 @@ import (
 )
 
 var (
-	lockKeycloakInterfaceMockCreateAuthenticatorConfig           sync.RWMutex
-	lockKeycloakInterfaceMockCreateClient                        sync.RWMutex
-	lockKeycloakInterfaceMockCreateFederatedIdentity             sync.RWMutex
-	lockKeycloakInterfaceMockCreateGroup                         sync.RWMutex
-	lockKeycloakInterfaceMockCreateGroupClientRole               sync.RWMutex
-	lockKeycloakInterfaceMockCreateIdentityProvider              sync.RWMutex
-	lockKeycloakInterfaceMockCreateRealm                         sync.RWMutex
-	lockKeycloakInterfaceMockCreateUser                          sync.RWMutex
-	lockKeycloakInterfaceMockCreateUserClientRole                sync.RWMutex
-	lockKeycloakInterfaceMockCreateUserRealmRole                 sync.RWMutex
-	lockKeycloakInterfaceMockDeleteAuthenticatorConfig           sync.RWMutex
-	lockKeycloakInterfaceMockDeleteClient                        sync.RWMutex
-	lockKeycloakInterfaceMockDeleteIdentityProvider              sync.RWMutex
-	lockKeycloakInterfaceMockDeleteRealm                         sync.RWMutex
-	lockKeycloakInterfaceMockDeleteUser                          sync.RWMutex
-	lockKeycloakInterfaceMockDeleteUserClientRole                sync.RWMutex
-	lockKeycloakInterfaceMockDeleteUserRealmRole                 sync.RWMutex
-	lockKeycloakInterfaceMockFindAvailableGroupClientRole        sync.RWMutex
-	lockKeycloakInterfaceMockFindGroupByName                     sync.RWMutex
-	lockKeycloakInterfaceMockFindGroupClientRole                 sync.RWMutex
-	lockKeycloakInterfaceMockFindUserByEmail                     sync.RWMutex
-	lockKeycloakInterfaceMockFindUserByUsername                  sync.RWMutex
-	lockKeycloakInterfaceMockGetAuthenticatorConfig              sync.RWMutex
-	lockKeycloakInterfaceMockGetClient                           sync.RWMutex
-	lockKeycloakInterfaceMockGetClientInstall                    sync.RWMutex
-	lockKeycloakInterfaceMockGetClientSecret                     sync.RWMutex
-	lockKeycloakInterfaceMockGetIdentityProvider                 sync.RWMutex
-	lockKeycloakInterfaceMockGetRealm                            sync.RWMutex
-	lockKeycloakInterfaceMockGetUser                             sync.RWMutex
-	lockKeycloakInterfaceMockGetUserFederatedIdentities          sync.RWMutex
-	lockKeycloakInterfaceMockListAuthenticationExecutionsForFlow sync.RWMutex
-	lockKeycloakInterfaceMockListAvailableGroupClientRoles       sync.RWMutex
-	lockKeycloakInterfaceMockListAvailableUserClientRoles        sync.RWMutex
-	lockKeycloakInterfaceMockListAvailableUserRealmRoles         sync.RWMutex
-	lockKeycloakInterfaceMockListClients                         sync.RWMutex
-	lockKeycloakInterfaceMockListDefaultGroups                   sync.RWMutex
-	lockKeycloakInterfaceMockListGroupClientRoles                sync.RWMutex
-	lockKeycloakInterfaceMockListIdentityProviders               sync.RWMutex
-	lockKeycloakInterfaceMockListRealms                          sync.RWMutex
-	lockKeycloakInterfaceMockListUserClientRoles                 sync.RWMutex
-	lockKeycloakInterfaceMockListUserRealmRoles                  sync.RWMutex
-	lockKeycloakInterfaceMockListUsers                           sync.RWMutex
-	lockKeycloakInterfaceMockMakeGroupDefault                    sync.RWMutex
-	lockKeycloakInterfaceMockPing                                sync.RWMutex
-	lockKeycloakInterfaceMockRemoveFederatedIdentity             sync.RWMutex
-	lockKeycloakInterfaceMockUpdateAuthenticatorConfig           sync.RWMutex
-	lockKeycloakInterfaceMockUpdateClient                        sync.RWMutex
-	lockKeycloakInterfaceMockUpdateIdentityProvider              sync.RWMutex
-	lockKeycloakInterfaceMockUpdatePassword                      sync.RWMutex
-	lockKeycloakInterfaceMockUpdateRealm                         sync.RWMutex
-	lockKeycloakInterfaceMockUpdateUser                          sync.RWMutex
+	lockKeycloakInterfaceMockCreateAuthenticatorConfig            sync.RWMutex
+	lockKeycloakInterfaceMockCreateClient                         sync.RWMutex
+	lockKeycloakInterfaceMockCreateFederatedIdentity              sync.RWMutex
+	lockKeycloakInterfaceMockCreateGroup                          sync.RWMutex
+	lockKeycloakInterfaceMockCreateGroupClientRole                sync.RWMutex
+	lockKeycloakInterfaceMockCreateIdentityProvider               sync.RWMutex
+	lockKeycloakInterfaceMockCreateRealm                          sync.RWMutex
+	lockKeycloakInterfaceMockCreateUser                           sync.RWMutex
+	lockKeycloakInterfaceMockCreateUserClientRole                 sync.RWMutex
+	lockKeycloakInterfaceMockCreateUserRealmRole                  sync.RWMutex
+	lockKeycloakInterfaceMockDeleteAuthenticatorConfig            sync.RWMutex
+	lockKeycloakInterfaceMockDeleteClient                         sync.RWMutex
+	lockKeycloakInterfaceMockDeleteIdentityProvider               sync.RWMutex
+	lockKeycloakInterfaceMockDeleteRealm                          sync.RWMutex
+	lockKeycloakInterfaceMockDeleteUser                           sync.RWMutex
+	lockKeycloakInterfaceMockDeleteUserClientRole                 sync.RWMutex
+	lockKeycloakInterfaceMockDeleteUserRealmRole                  sync.RWMutex
+	lockKeycloakInterfaceMockFindAuthenticationExecutionForFlow   sync.RWMutex
+	lockKeycloakInterfaceMockFindAvailableGroupClientRole         sync.RWMutex
+	lockKeycloakInterfaceMockFindGroupByName                      sync.RWMutex
+	lockKeycloakInterfaceMockFindGroupClientRole                  sync.RWMutex
+	lockKeycloakInterfaceMockFindUserByEmail                      sync.RWMutex
+	lockKeycloakInterfaceMockFindUserByUsername                   sync.RWMutex
+	lockKeycloakInterfaceMockGetAuthenticatorConfig               sync.RWMutex
+	lockKeycloakInterfaceMockGetClient                            sync.RWMutex
+	lockKeycloakInterfaceMockGetClientInstall                     sync.RWMutex
+	lockKeycloakInterfaceMockGetClientSecret                      sync.RWMutex
+	lockKeycloakInterfaceMockGetIdentityProvider                  sync.RWMutex
+	lockKeycloakInterfaceMockGetRealm                             sync.RWMutex
+	lockKeycloakInterfaceMockGetUser                              sync.RWMutex
+	lockKeycloakInterfaceMockGetUserFederatedIdentities           sync.RWMutex
+	lockKeycloakInterfaceMockListAuthenticationExecutionsForFlow  sync.RWMutex
+	lockKeycloakInterfaceMockListAvailableGroupClientRoles        sync.RWMutex
+	lockKeycloakInterfaceMockListAvailableUserClientRoles         sync.RWMutex
+	lockKeycloakInterfaceMockListAvailableUserRealmRoles          sync.RWMutex
+	lockKeycloakInterfaceMockListClients                          sync.RWMutex
+	lockKeycloakInterfaceMockListDefaultGroups                    sync.RWMutex
+	lockKeycloakInterfaceMockListGroupClientRoles                 sync.RWMutex
+	lockKeycloakInterfaceMockListIdentityProviders                sync.RWMutex
+	lockKeycloakInterfaceMockListRealms                           sync.RWMutex
+	lockKeycloakInterfaceMockListUserClientRoles                  sync.RWMutex
+	lockKeycloakInterfaceMockListUserRealmRoles                   sync.RWMutex
+	lockKeycloakInterfaceMockListUsers                            sync.RWMutex
+	lockKeycloakInterfaceMockMakeGroupDefault                     sync.RWMutex
+	lockKeycloakInterfaceMockPing                                 sync.RWMutex
+	lockKeycloakInterfaceMockRemoveFederatedIdentity              sync.RWMutex
+	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow sync.RWMutex
+	lockKeycloakInterfaceMockUpdateAuthenticatorConfig            sync.RWMutex
+	lockKeycloakInterfaceMockUpdateClient                         sync.RWMutex
+	lockKeycloakInterfaceMockUpdateIdentityProvider               sync.RWMutex
+	lockKeycloakInterfaceMockUpdatePassword                       sync.RWMutex
+	lockKeycloakInterfaceMockUpdateRealm                          sync.RWMutex
+	lockKeycloakInterfaceMockUpdateUser                           sync.RWMutex
 )
 
 // Ensure, that KeycloakInterfaceMock does implement KeycloakInterface.
@@ -122,6 +124,9 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //             },
 //             DeleteUserRealmRoleFunc: func(role *v1alpha1.KeycloakUserRole, realmName string, userID string) error {
 // 	               panic("mock out the DeleteUserRealmRole method")
+//             },
+//             FindAuthenticationExecutionForFlowFunc: func(flowAlias string, realmName string, predicate func(*v1alpha1.AuthenticationExecutionInfo) bool) (*v1alpha1.AuthenticationExecutionInfo, error) {
+// 	               panic("mock out the FindAuthenticationExecutionForFlow method")
 //             },
 //             FindAvailableGroupClientRoleFunc: func(realmName string, clientID string, groupID string, predicate func(*v1alpha1.KeycloakUserRole) bool) (*v1alpha1.KeycloakUserRole, error) {
 // 	               panic("mock out the FindAvailableGroupClientRole method")
@@ -207,6 +212,9 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //             RemoveFederatedIdentityFunc: func(fid v1alpha1.FederatedIdentity, userID string, realmName string) error {
 // 	               panic("mock out the RemoveFederatedIdentity method")
 //             },
+//             UpdateAuthenticationExecutionForFlowFunc: func(flowAlias string, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error {
+// 	               panic("mock out the UpdateAuthenticationExecutionForFlow method")
+//             },
 //             UpdateAuthenticatorConfigFunc: func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string) error {
 // 	               panic("mock out the UpdateAuthenticatorConfig method")
 //             },
@@ -282,6 +290,9 @@ type KeycloakInterfaceMock struct {
 
 	// DeleteUserRealmRoleFunc mocks the DeleteUserRealmRole method.
 	DeleteUserRealmRoleFunc func(role *v1alpha1.KeycloakUserRole, realmName string, userID string) error
+
+	// FindAuthenticationExecutionForFlowFunc mocks the FindAuthenticationExecutionForFlow method.
+	FindAuthenticationExecutionForFlowFunc func(flowAlias string, realmName string, predicate func(*v1alpha1.AuthenticationExecutionInfo) bool) (*v1alpha1.AuthenticationExecutionInfo, error)
 
 	// FindAvailableGroupClientRoleFunc mocks the FindAvailableGroupClientRole method.
 	FindAvailableGroupClientRoleFunc func(realmName string, clientID string, groupID string, predicate func(*v1alpha1.KeycloakUserRole) bool) (*v1alpha1.KeycloakUserRole, error)
@@ -366,6 +377,9 @@ type KeycloakInterfaceMock struct {
 
 	// RemoveFederatedIdentityFunc mocks the RemoveFederatedIdentity method.
 	RemoveFederatedIdentityFunc func(fid v1alpha1.FederatedIdentity, userID string, realmName string) error
+
+	// UpdateAuthenticationExecutionForFlowFunc mocks the UpdateAuthenticationExecutionForFlow method.
+	UpdateAuthenticationExecutionForFlowFunc func(flowAlias string, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error
 
 	// UpdateAuthenticatorConfigFunc mocks the UpdateAuthenticatorConfig method.
 	UpdateAuthenticatorConfigFunc func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string) error
@@ -521,6 +535,15 @@ type KeycloakInterfaceMock struct {
 			RealmName string
 			// UserID is the userID argument value.
 			UserID string
+		}
+		// FindAuthenticationExecutionForFlow holds details about calls to the FindAuthenticationExecutionForFlow method.
+		FindAuthenticationExecutionForFlow []struct {
+			// FlowAlias is the flowAlias argument value.
+			FlowAlias string
+			// RealmName is the realmName argument value.
+			RealmName string
+			// Predicate is the predicate argument value.
+			Predicate func(*v1alpha1.AuthenticationExecutionInfo) bool
 		}
 		// FindAvailableGroupClientRole holds details about calls to the FindAvailableGroupClientRole method.
 		FindAvailableGroupClientRole []struct {
@@ -717,6 +740,15 @@ type KeycloakInterfaceMock struct {
 			UserID string
 			// RealmName is the realmName argument value.
 			RealmName string
+		}
+		// UpdateAuthenticationExecutionForFlow holds details about calls to the UpdateAuthenticationExecutionForFlow method.
+		UpdateAuthenticationExecutionForFlow []struct {
+			// FlowAlias is the flowAlias argument value.
+			FlowAlias string
+			// RealmName is the realmName argument value.
+			RealmName string
+			// Execution is the execution argument value.
+			Execution *v1alpha1.AuthenticationExecutionInfo
 		}
 		// UpdateAuthenticatorConfig holds details about calls to the UpdateAuthenticatorConfig method.
 		UpdateAuthenticatorConfig []struct {
@@ -1387,6 +1419,45 @@ func (mock *KeycloakInterfaceMock) DeleteUserRealmRoleCalls() []struct {
 	lockKeycloakInterfaceMockDeleteUserRealmRole.RLock()
 	calls = mock.calls.DeleteUserRealmRole
 	lockKeycloakInterfaceMockDeleteUserRealmRole.RUnlock()
+	return calls
+}
+
+// FindAuthenticationExecutionForFlow calls FindAuthenticationExecutionForFlowFunc.
+func (mock *KeycloakInterfaceMock) FindAuthenticationExecutionForFlow(flowAlias string, realmName string, predicate func(*v1alpha1.AuthenticationExecutionInfo) bool) (*v1alpha1.AuthenticationExecutionInfo, error) {
+	if mock.FindAuthenticationExecutionForFlowFunc == nil {
+		panic("KeycloakInterfaceMock.FindAuthenticationExecutionForFlowFunc: method is nil but KeycloakInterface.FindAuthenticationExecutionForFlow was just called")
+	}
+	callInfo := struct {
+		FlowAlias string
+		RealmName string
+		Predicate func(*v1alpha1.AuthenticationExecutionInfo) bool
+	}{
+		FlowAlias: flowAlias,
+		RealmName: realmName,
+		Predicate: predicate,
+	}
+	lockKeycloakInterfaceMockFindAuthenticationExecutionForFlow.Lock()
+	mock.calls.FindAuthenticationExecutionForFlow = append(mock.calls.FindAuthenticationExecutionForFlow, callInfo)
+	lockKeycloakInterfaceMockFindAuthenticationExecutionForFlow.Unlock()
+	return mock.FindAuthenticationExecutionForFlowFunc(flowAlias, realmName, predicate)
+}
+
+// FindAuthenticationExecutionForFlowCalls gets all the calls that were made to FindAuthenticationExecutionForFlow.
+// Check the length with:
+//     len(mockedKeycloakInterface.FindAuthenticationExecutionForFlowCalls())
+func (mock *KeycloakInterfaceMock) FindAuthenticationExecutionForFlowCalls() []struct {
+	FlowAlias string
+	RealmName string
+	Predicate func(*v1alpha1.AuthenticationExecutionInfo) bool
+} {
+	var calls []struct {
+		FlowAlias string
+		RealmName string
+		Predicate func(*v1alpha1.AuthenticationExecutionInfo) bool
+	}
+	lockKeycloakInterfaceMockFindAuthenticationExecutionForFlow.RLock()
+	calls = mock.calls.FindAuthenticationExecutionForFlow
+	lockKeycloakInterfaceMockFindAuthenticationExecutionForFlow.RUnlock()
 	return calls
 }
 
@@ -2365,6 +2436,45 @@ func (mock *KeycloakInterfaceMock) RemoveFederatedIdentityCalls() []struct {
 	lockKeycloakInterfaceMockRemoveFederatedIdentity.RLock()
 	calls = mock.calls.RemoveFederatedIdentity
 	lockKeycloakInterfaceMockRemoveFederatedIdentity.RUnlock()
+	return calls
+}
+
+// UpdateAuthenticationExecutionForFlow calls UpdateAuthenticationExecutionForFlowFunc.
+func (mock *KeycloakInterfaceMock) UpdateAuthenticationExecutionForFlow(flowAlias string, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error {
+	if mock.UpdateAuthenticationExecutionForFlowFunc == nil {
+		panic("KeycloakInterfaceMock.UpdateAuthenticationExecutionForFlowFunc: method is nil but KeycloakInterface.UpdateAuthenticationExecutionForFlow was just called")
+	}
+	callInfo := struct {
+		FlowAlias string
+		RealmName string
+		Execution *v1alpha1.AuthenticationExecutionInfo
+	}{
+		FlowAlias: flowAlias,
+		RealmName: realmName,
+		Execution: execution,
+	}
+	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow.Lock()
+	mock.calls.UpdateAuthenticationExecutionForFlow = append(mock.calls.UpdateAuthenticationExecutionForFlow, callInfo)
+	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow.Unlock()
+	return mock.UpdateAuthenticationExecutionForFlowFunc(flowAlias, realmName, execution)
+}
+
+// UpdateAuthenticationExecutionForFlowCalls gets all the calls that were made to UpdateAuthenticationExecutionForFlow.
+// Check the length with:
+//     len(mockedKeycloakInterface.UpdateAuthenticationExecutionForFlowCalls())
+func (mock *KeycloakInterfaceMock) UpdateAuthenticationExecutionForFlowCalls() []struct {
+	FlowAlias string
+	RealmName string
+	Execution *v1alpha1.AuthenticationExecutionInfo
+} {
+	var calls []struct {
+		FlowAlias string
+		RealmName string
+		Execution *v1alpha1.AuthenticationExecutionInfo
+	}
+	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow.RLock()
+	calls = mock.calls.UpdateAuthenticationExecutionForFlow
+	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow.RUnlock()
 	return calls
 }
 

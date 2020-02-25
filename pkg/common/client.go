@@ -646,6 +646,27 @@ func (c *Client) ListAuthenticationExecutionsForFlow(flowAlias, realmName string
 	return result.([]*v1alpha1.AuthenticationExecutionInfo), err
 }
 
+func (c *Client) FindAuthenticationExecutionForFlow(flowAlias, realmName string, predicate func(*v1alpha1.AuthenticationExecutionInfo) bool) (*v1alpha1.AuthenticationExecutionInfo, error) {
+	executions, err := c.ListAuthenticationExecutionsForFlow(flowAlias, realmName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, execution := range executions {
+		if predicate(execution) {
+			return execution, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (c *Client) UpdateAuthenticationExecutionForFlow(flowAlias, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error {
+	path := fmt.Sprintf("realms/%s/authentication/flows/%s/executions", realmName, flowAlias)
+	return c.update(execution, path, "AuthenticationExecution")
+}
+
 func (c *Client) FindGroupByName(groupName string, realmName string) (*Group, error) {
 	// Get a list of the groups in the realm
 	tGroups, err := c.list(fmt.Sprintf("realms/%s/groups", realmName), "Group", func(body []byte) (T, error) {
@@ -935,6 +956,8 @@ type KeycloakInterface interface {
 	DeleteUserRealmRole(role *v1alpha1.KeycloakUserRole, realmName, userID string) error
 
 	ListAuthenticationExecutionsForFlow(flowAlias, realmName string) ([]*v1alpha1.AuthenticationExecutionInfo, error)
+	FindAuthenticationExecutionForFlow(flowAlias, realmName string, predicate func(*v1alpha1.AuthenticationExecutionInfo) bool) (*v1alpha1.AuthenticationExecutionInfo, error)
+	UpdateAuthenticationExecutionForFlow(flowAlias, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error
 
 	CreateAuthenticatorConfig(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName, executionID string) error
 	GetAuthenticatorConfig(configID, realmName string) (*v1alpha1.AuthenticatorConfig, error)
