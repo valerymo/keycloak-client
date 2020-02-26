@@ -26,6 +26,9 @@ const (
 	GroupCreateClientRole             = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetClientRoles               = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetAvailableClientRoles      = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s/available"
+	GroupCreateRealmRole              = "/auth/admin/realms/%s/groups/%s/role-mappings/realm"
+	GroupGetRealmRoles                = "/auth/admin/realms/%s/groups/%s/role-mappings/realm"
+	GroupGetAvailableRealmRoles       = "/auth/admin/realms/%s/groups/%s/role-mappings/realm/available"
 	AuthenticationFlowUpdateExecution = "/auth/admin/realms/%s/authentication/flows/%s/executions"
 	TokenPath                         = "/auth/realms/master/protocol/openid-connect/token" // nolint
 )
@@ -378,6 +381,52 @@ func TestClient_UpdateAuthenticationExecutionForFlow(t *testing.T) {
 		withPathAssertion(t, 200, requestPath),
 		func(c *Client) {
 			err := c.UpdateAuthenticationExecutionForFlow(flowAlias, realm.Spec.Realm.Realm, &v1alpha1.AuthenticationExecutionInfo{})
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_CreateGroupRealmRole(t *testing.T) {
+	const groupID string = "12345"
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(GroupCreateRealmRole, realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 201, expectedPath),
+		func(c *Client) {
+			err := c.CreateGroupRealmRole(&v1alpha1.KeycloakUserRole{}, realm.Spec.Realm.Realm, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_ListGroupRealmRoles(t *testing.T) {
+	const groupID string = "group12345"
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(GroupGetRealmRoles, realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 200, expectedPath),
+		func(c *Client) {
+			_, err := c.ListGroupRealmRoles(
+				realm.Spec.Realm.Realm, groupID)
+
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_ListAvailableGroupRealmRoles(t *testing.T) {
+	const groupID string = "group12345"
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(GroupGetAvailableRealmRoles, realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 200, expectedPath),
+		func(c *Client) {
+			_, err := c.ListAvailableGroupRealmRoles(
+				realm.Spec.Realm.Realm, groupID)
+
 			assert.NoError(t, err)
 		},
 	)
