@@ -203,7 +203,7 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //             ListIdentityProvidersFunc: func(realmName string) ([]*v1alpha1.KeycloakIdentityProvider, error) {
 // 	               panic("mock out the ListIdentityProviders method")
 //             },
-//             ListRealmsFunc: func() ([]*v1alpha1.KeycloakRealm, error) {
+//             ListRealmsFunc: func() ([]*v1alpha1.KeycloakAPIRealm, error) {
 // 	               panic("mock out the ListRealms method")
 //             },
 //             ListUserClientRolesFunc: func(realmName string, clientID string, userID string) ([]*v1alpha1.KeycloakUserRole, error) {
@@ -379,7 +379,7 @@ type KeycloakInterfaceMock struct {
 	ListIdentityProvidersFunc func(realmName string) ([]*v1alpha1.KeycloakIdentityProvider, error)
 
 	// ListRealmsFunc mocks the ListRealms method.
-	ListRealmsFunc func() ([]*v1alpha1.KeycloakRealm, error)
+	ListRealmsFunc func() ([]*v1alpha1.KeycloakAPIRealm, error)
 
 	// ListUserClientRolesFunc mocks the ListUserClientRoles method.
 	ListUserClientRolesFunc func(realmName string, clientID string, userID string) ([]*v1alpha1.KeycloakUserRole, error)
@@ -2362,7 +2362,7 @@ func (mock *KeycloakInterfaceMock) ListIdentityProvidersCalls() []struct {
 }
 
 // ListRealms calls ListRealmsFunc.
-func (mock *KeycloakInterfaceMock) ListRealms() ([]*v1alpha1.KeycloakRealm, error) {
+func (mock *KeycloakInterfaceMock) ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error) {
 	if mock.ListRealmsFunc == nil {
 		panic("KeycloakInterfaceMock.ListRealmsFunc: method is nil but KeycloakInterface.ListRealms was just called")
 	}

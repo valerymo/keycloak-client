@@ -517,13 +517,13 @@ func (c *Client) list(resourcePath, resourceName string, unMarshalListFunc func(
 	return objs, nil
 }
 
-func (c *Client) ListRealms() ([]*v1alpha1.KeycloakRealm, error) {
+func (c *Client) ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error) {
 	result, err := c.list("realms", "realm", func(body []byte) (T, error) {
-		var realms []*v1alpha1.KeycloakRealm
+		var realms []*v1alpha1.KeycloakAPIRealm
 		err := json.Unmarshal(body, &realms)
 		return realms, err
 	})
-	resultAsRealm, ok := result.([]*v1alpha1.KeycloakRealm)
+	resultAsRealm, ok := result.([]*v1alpha1.KeycloakAPIRealm)
 	if !ok {
 		return nil, err
 	}
@@ -946,7 +946,7 @@ type KeycloakInterface interface {
 	GetRealm(realmName string) (*v1alpha1.KeycloakRealm, error)
 	UpdateRealm(specRealm *v1alpha1.KeycloakRealm) error
 	DeleteRealm(realmName string) error
-	ListRealms() ([]*v1alpha1.KeycloakRealm, error)
+	ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error)
 
 	CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) error
 	GetClient(clientID, realmName string) (*v1alpha1.KeycloakAPIClient, error)
