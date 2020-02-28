@@ -58,6 +58,7 @@ var (
 	lockKeycloakInterfaceMockMakeGroupDefault                     sync.RWMutex
 	lockKeycloakInterfaceMockPing                                 sync.RWMutex
 	lockKeycloakInterfaceMockRemoveFederatedIdentity              sync.RWMutex
+	lockKeycloakInterfaceMockSetGroupChild                        sync.RWMutex
 	lockKeycloakInterfaceMockUpdateAuthenticationExecutionForFlow sync.RWMutex
 	lockKeycloakInterfaceMockUpdateAuthenticatorConfig            sync.RWMutex
 	lockKeycloakInterfaceMockUpdateClient                         sync.RWMutex
@@ -223,6 +224,9 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //             },
 //             RemoveFederatedIdentityFunc: func(fid v1alpha1.FederatedIdentity, userID string, realmName string) error {
 // 	               panic("mock out the RemoveFederatedIdentity method")
+//             },
+//             SetGroupChildFunc: func(groupID string, realmName string, childGroup *Group) error {
+// 	               panic("mock out the SetGroupChild method")
 //             },
 //             UpdateAuthenticationExecutionForFlowFunc: func(flowAlias string, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error {
 // 	               panic("mock out the UpdateAuthenticationExecutionForFlow method")
@@ -398,6 +402,9 @@ type KeycloakInterfaceMock struct {
 
 	// RemoveFederatedIdentityFunc mocks the RemoveFederatedIdentity method.
 	RemoveFederatedIdentityFunc func(fid v1alpha1.FederatedIdentity, userID string, realmName string) error
+
+	// SetGroupChildFunc mocks the SetGroupChild method.
+	SetGroupChildFunc func(groupID string, realmName string, childGroup *Group) error
 
 	// UpdateAuthenticationExecutionForFlowFunc mocks the UpdateAuthenticationExecutionForFlow method.
 	UpdateAuthenticationExecutionForFlowFunc func(flowAlias string, realmName string, execution *v1alpha1.AuthenticationExecutionInfo) error
@@ -784,6 +791,15 @@ type KeycloakInterfaceMock struct {
 			UserID string
 			// RealmName is the realmName argument value.
 			RealmName string
+		}
+		// SetGroupChild holds details about calls to the SetGroupChild method.
+		SetGroupChild []struct {
+			// GroupID is the groupID argument value.
+			GroupID string
+			// RealmName is the realmName argument value.
+			RealmName string
+			// ChildGroup is the childGroup argument value.
+			ChildGroup *Group
 		}
 		// UpdateAuthenticationExecutionForFlow holds details about calls to the UpdateAuthenticationExecutionForFlow method.
 		UpdateAuthenticationExecutionForFlow []struct {
@@ -2589,6 +2605,45 @@ func (mock *KeycloakInterfaceMock) RemoveFederatedIdentityCalls() []struct {
 	lockKeycloakInterfaceMockRemoveFederatedIdentity.RLock()
 	calls = mock.calls.RemoveFederatedIdentity
 	lockKeycloakInterfaceMockRemoveFederatedIdentity.RUnlock()
+	return calls
+}
+
+// SetGroupChild calls SetGroupChildFunc.
+func (mock *KeycloakInterfaceMock) SetGroupChild(groupID string, realmName string, childGroup *Group) error {
+	if mock.SetGroupChildFunc == nil {
+		panic("KeycloakInterfaceMock.SetGroupChildFunc: method is nil but KeycloakInterface.SetGroupChild was just called")
+	}
+	callInfo := struct {
+		GroupID    string
+		RealmName  string
+		ChildGroup *Group
+	}{
+		GroupID:    groupID,
+		RealmName:  realmName,
+		ChildGroup: childGroup,
+	}
+	lockKeycloakInterfaceMockSetGroupChild.Lock()
+	mock.calls.SetGroupChild = append(mock.calls.SetGroupChild, callInfo)
+	lockKeycloakInterfaceMockSetGroupChild.Unlock()
+	return mock.SetGroupChildFunc(groupID, realmName, childGroup)
+}
+
+// SetGroupChildCalls gets all the calls that were made to SetGroupChild.
+// Check the length with:
+//     len(mockedKeycloakInterface.SetGroupChildCalls())
+func (mock *KeycloakInterfaceMock) SetGroupChildCalls() []struct {
+	GroupID    string
+	RealmName  string
+	ChildGroup *Group
+} {
+	var calls []struct {
+		GroupID    string
+		RealmName  string
+		ChildGroup *Group
+	}
+	lockKeycloakInterfaceMockSetGroupChild.RLock()
+	calls = mock.calls.SetGroupChild
+	lockKeycloakInterfaceMockSetGroupChild.RUnlock()
 	return calls
 }
 

@@ -19,10 +19,12 @@ const (
 	RealmsDeletePath                  = "/auth/admin/realms/%s"
 	UserCreatePath                    = "/auth/admin/realms/%s/users"
 	UserDeletePath                    = "/auth/admin/realms/%s/users/%s"
-	GroupGetPath                      = "/auth/admin/realms/%s/groups"
+	GroupGetPath                      = "/auth/admin/realms/%s/groups/%s"
+	GroupListPath                     = "/auth/admin/realms/%s/groups"
 	GroupCreatePath                   = "/auth/admin/realms/%s/groups"
 	GroupGetDefaults                  = "/auth/admin/realms/%s/default-groups"
 	GroupMakeDefaultPath              = "/auth/admin/realms/%s/default-groups/%s"
+	GroupSetChildPath                 = "/auth/admin/realms/%s/groups/%s/children"
 	GroupCreateClientRole             = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetClientRoles               = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetAvailableClientRoles      = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s/available"
@@ -244,7 +246,7 @@ func TestClient_FindGroupByName(t *testing.T) {
 	handle := withPathAssertionBody(
 		t,
 		200,
-		fmt.Sprintf(GroupGetPath, realm.Spec.Realm.Realm),
+		fmt.Sprintf(GroupListPath, realm.Spec.Realm.Realm),
 		[]*Group{
 			&Group{
 				ID:   existingGroupID,
@@ -316,6 +318,29 @@ func TestClient_MakeGroupDefault(t *testing.T) {
 	}
 
 	testClientHTTPRequest(handle, request)
+}
+
+func TestClient_SetGroupChild(t *testing.T) {
+	const groupID string = "12345"
+	realm := getDummyRealm()
+	path := fmt.Sprintf(GroupSetChildPath, realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodGet: withPathAssertionBody(t, 200, fmt.Sprintf(GroupGetPath, realm.Spec.Realm.Realm, groupID), &Group{
+				ID:        groupID,
+				SubGroups: []*Group{},
+			}),
+			http.MethodPost: withPathAssertion(t, 201, path),
+		}),
+		func(c *Client) {
+			err := c.SetGroupChild(groupID, realm.Spec.Realm.Realm, &Group{
+				ID: "67890",
+			})
+
+			assert.NoError(t, err)
+		},
+	)
 }
 
 func TestClient_CreateGroupClientRole(t *testing.T) {
