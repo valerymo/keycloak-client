@@ -203,8 +203,8 @@ func TestClient_ListRealms(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, RealmsCreatePath, req.URL.Path)
 		assert.Equal(t, req.Method, http.MethodGet)
-		var list []*v1alpha1.KeycloakRealm
-		list = append(list, realm)
+		var list []*v1alpha1.KeycloakAPIRealm
+		list = append(list, realm.Spec.Realm)
 		json, err := jsoniter.Marshal(list)
 		assert.NoError(t, err)
 
