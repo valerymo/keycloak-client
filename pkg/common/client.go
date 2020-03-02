@@ -562,6 +562,37 @@ func (c *Client) ListUsers(realmName string) ([]*v1alpha1.KeycloakAPIUser, error
 	return result.([]*v1alpha1.KeycloakAPIUser), err
 }
 
+func (c *Client) ListUsersInGroup(realmName, groupID string) ([]*v1alpha1.KeycloakAPIUser, error) {
+	path := fmt.Sprintf("realms/%s/groups/%s/members", realmName, groupID)
+	result, err := c.list(path, "users", func(body []byte) (T, error) {
+		var users []*v1alpha1.KeycloakAPIUser
+		err := json.Unmarshal(body, &users)
+		return users, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.([]*v1alpha1.KeycloakAPIUser), nil
+}
+
+func (c *Client) AddUserToGroup(realmName, userID, groupID string) error {
+	add := map[string]string{
+		"userId":  userID,
+		"groupId": groupID,
+		"realm":   realmName,
+	}
+	path := fmt.Sprintf("realms/%s/users/%s/groups/%s", realmName, userID, groupID)
+
+	return c.update(add, path, "user-group")
+}
+
+func (c *Client) DeleteUserFromGroup(realmName, userID, groupID string) error {
+	path := fmt.Sprintf("realms/%s/users/%s/groups/%s", realmName, userID, groupID)
+
+	return c.delete(path, "user-group", nil)
+}
+
 func (c *Client) ListIdentityProviders(realmName string) ([]*v1alpha1.KeycloakIdentityProvider, error) {
 	result, err := c.list(fmt.Sprintf("realms/%s/identity-provider/instances", realmName), "identity providers", func(body []byte) (T, error) {
 		var providers []*v1alpha1.KeycloakIdentityProvider
@@ -1007,6 +1038,9 @@ type KeycloakInterface interface {
 	UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error
 	DeleteUser(userID, realmName string) error
 	ListUsers(realmName string) ([]*v1alpha1.KeycloakAPIUser, error)
+	ListUsersInGroup(realmName, groupID string) ([]*v1alpha1.KeycloakAPIUser, error)
+	AddUserToGroup(realmName, userID, groupID string) error
+	DeleteUserFromGroup(realmName, userID, groupID string) error
 
 	FindGroupByName(groupName string, realmName string) (*Group, error)
 	CreateGroup(group string, realmName string) (string, error)

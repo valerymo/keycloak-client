@@ -19,6 +19,9 @@ const (
 	RealmsDeletePath                  = "/auth/admin/realms/%s"
 	UserCreatePath                    = "/auth/admin/realms/%s/users"
 	UserDeletePath                    = "/auth/admin/realms/%s/users/%s"
+	UserAddToGroupPath                = "/auth/admin/realms/%s/users/%s/groups/%s"
+	UserDeleteFromGroupPath           = "/auth/admin/realms/%s/users/%s/groups/%s"
+	GroupGetUsersPath                 = "/auth/admin/realms/%s/groups/%s/members"
 	GroupGetPath                      = "/auth/admin/realms/%s/groups/%s"
 	GroupListPath                     = "/auth/admin/realms/%s/groups"
 	GroupCreatePath                   = "/auth/admin/realms/%s/groups"
@@ -160,6 +163,63 @@ func TestClient_DeleteUser(t *testing.T) {
 	// then
 	// correct path expected on httptest server
 	assert.NoError(t, err)
+}
+
+func TestClient_ListUsersInGroup(t *testing.T) {
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(GroupGetUsersPath,
+		realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodGet: withPathAssertionBody(t, 200, expectedPath, &v1alpha1.KeycloakAPIUser{}),
+		}),
+
+		func(c *Client) {
+			_, err := c.ListUsersInGroup(realm.Spec.Realm.Realm, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_AddUserToGroup(t *testing.T) {
+	user := getDummyUser()
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(UserAddToGroupPath, realm.Spec.Realm.Realm, user.ID, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodPut: withPathAssertion(t, 201, expectedPath),
+		}),
+
+		func(c *Client) {
+			err := c.AddUserToGroup(realm.Spec.Realm.Realm, user.ID, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_DeleteUserFromGroup(t *testing.T) {
+	user := getDummyUser()
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(UserDeleteFromGroupPath, realm.Spec.Realm.Realm, user.ID, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodDelete: withPathAssertion(t, 204, expectedPath),
+		}),
+
+		func(c *Client) {
+			err := c.DeleteUserFromGroup(realm.Spec.Realm.Realm, user.ID, groupID)
+			assert.NoError(t, err)
+		},
+	)
 }
 
 func TestClient_GetRealm(t *testing.T) {
