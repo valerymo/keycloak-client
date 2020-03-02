@@ -19,10 +19,15 @@ const (
 	RealmsDeletePath                  = "/auth/admin/realms/%s"
 	UserCreatePath                    = "/auth/admin/realms/%s/users"
 	UserDeletePath                    = "/auth/admin/realms/%s/users/%s"
-	GroupGetPath                      = "/auth/admin/realms/%s/groups"
+	UserAddToGroupPath                = "/auth/admin/realms/%s/users/%s/groups/%s"
+	UserDeleteFromGroupPath           = "/auth/admin/realms/%s/users/%s/groups/%s"
+	GroupGetUsersPath                 = "/auth/admin/realms/%s/groups/%s/members"
+	GroupGetPath                      = "/auth/admin/realms/%s/groups/%s"
+	GroupListPath                     = "/auth/admin/realms/%s/groups"
 	GroupCreatePath                   = "/auth/admin/realms/%s/groups"
 	GroupGetDefaults                  = "/auth/admin/realms/%s/default-groups"
 	GroupMakeDefaultPath              = "/auth/admin/realms/%s/default-groups/%s"
+	GroupSetChildPath                 = "/auth/admin/realms/%s/groups/%s/children"
 	GroupCreateClientRole             = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetClientRoles               = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s"
 	GroupGetAvailableClientRoles      = "/auth/admin/realms/%s/groups/%s/role-mappings/clients/%s/available"
@@ -160,6 +165,63 @@ func TestClient_DeleteUser(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestClient_ListUsersInGroup(t *testing.T) {
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(GroupGetUsersPath,
+		realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodGet: withPathAssertionBody(t, 200, expectedPath, &v1alpha1.KeycloakAPIUser{}),
+		}),
+
+		func(c *Client) {
+			_, err := c.ListUsersInGroup(realm.Spec.Realm.Realm, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_AddUserToGroup(t *testing.T) {
+	user := getDummyUser()
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(UserAddToGroupPath, realm.Spec.Realm.Realm, user.ID, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodPut: withPathAssertion(t, 201, expectedPath),
+		}),
+
+		func(c *Client) {
+			err := c.AddUserToGroup(realm.Spec.Realm.Realm, user.ID, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_DeleteUserFromGroup(t *testing.T) {
+	user := getDummyUser()
+	realm := getDummyRealm()
+	groupID := "12345"
+
+	expectedPath := fmt.Sprintf(UserDeleteFromGroupPath, realm.Spec.Realm.Realm, user.ID, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodDelete: withPathAssertion(t, 204, expectedPath),
+		}),
+
+		func(c *Client) {
+			err := c.DeleteUserFromGroup(realm.Spec.Realm.Realm, user.ID, groupID)
+			assert.NoError(t, err)
+		},
+	)
+}
+
 func TestClient_GetRealm(t *testing.T) {
 	// given
 	realm := getDummyRealm()
@@ -244,7 +306,7 @@ func TestClient_FindGroupByName(t *testing.T) {
 	handle := withPathAssertionBody(
 		t,
 		200,
-		fmt.Sprintf(GroupGetPath, realm.Spec.Realm.Realm),
+		fmt.Sprintf(GroupListPath, realm.Spec.Realm.Realm),
 		[]*Group{
 			&Group{
 				ID:   existingGroupID,
@@ -316,6 +378,29 @@ func TestClient_MakeGroupDefault(t *testing.T) {
 	}
 
 	testClientHTTPRequest(handle, request)
+}
+
+func TestClient_SetGroupChild(t *testing.T) {
+	const groupID string = "12345"
+	realm := getDummyRealm()
+	path := fmt.Sprintf(GroupSetChildPath, realm.Spec.Realm.Realm, groupID)
+
+	testClientHTTPRequest(
+		withMethodSelection(t, map[string]http.HandlerFunc{
+			http.MethodGet: withPathAssertionBody(t, 200, fmt.Sprintf(GroupGetPath, realm.Spec.Realm.Realm, groupID), &Group{
+				ID:        groupID,
+				SubGroups: []*Group{},
+			}),
+			http.MethodPost: withPathAssertion(t, 201, path),
+		}),
+		func(c *Client) {
+			err := c.SetGroupChild(groupID, realm.Spec.Realm.Realm, &Group{
+				ID: "67890",
+			})
+
+			assert.NoError(t, err)
+		},
+	)
 }
 
 func TestClient_CreateGroupClientRole(t *testing.T) {
