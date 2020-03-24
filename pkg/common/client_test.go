@@ -19,6 +19,8 @@ const (
 	RealmsDeletePath                  = "/auth/admin/realms/%s"
 	UserCreatePath                    = "/auth/admin/realms/%s/users"
 	UserDeletePath                    = "/auth/admin/realms/%s/users/%s"
+	UserGetPath                       = "/auth/admin/realms/%s/users/%s"
+	UserFindByUsernamePath            = "/auth/admin/realms/%s/users?username=%s&max=-1"
 	UserAddToGroupPath                = "/auth/admin/realms/%s/users/%s/groups/%s"
 	UserDeleteFromGroupPath           = "/auth/admin/realms/%s/users/%s/groups/%s"
 	GroupGetUsersPath                 = "/auth/admin/realms/%s/groups/%s/members"
@@ -46,6 +48,27 @@ func getDummyRealm() *v1alpha1.KeycloakRealm {
 				Realm:       "dummy",
 				Enabled:     false,
 				DisplayName: "dummy",
+				Users: []*v1alpha1.KeycloakAPIUser{
+					getExistingDummyUser(),
+				},
+			},
+		},
+	}
+}
+
+func getExistingDummyUser() *v1alpha1.KeycloakAPIUser {
+	return &v1alpha1.KeycloakAPIUser{
+		ID:            "existing-dummy-user",
+		UserName:      "existing-dummy-user",
+		FirstName:     "existing-dummy-user",
+		LastName:      "existing-dummy-user",
+		Enabled:       true,
+		EmailVerified: true,
+		Credentials: []v1alpha1.KeycloakCredential{
+			{
+				Type:      "password",
+				Value:     "password",
+				Temporary: false,
 			},
 		},
 	}
@@ -80,7 +103,7 @@ func TestClient_CreateRealm(t *testing.T) {
 	realm := getDummyRealm()
 
 	// when
-	err := client.CreateRealm(realm)
+	_, err := client.CreateRealm(realm)
 
 	// then
 	// no error expected
@@ -117,9 +140,12 @@ func TestClient_CreateUser(t *testing.T) {
 	// given
 	user := getDummyUser()
 	realm := getDummyRealm()
+	dummyUserID := "dummy-user-id"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, fmt.Sprintf(UserCreatePath, realm.Spec.Realm.Realm), req.URL.Path)
+		locationURL := fmt.Sprintf("http://dummy-keycloak-host/%s", UserGetPath)
+		w.Header().Set("Location", fmt.Sprintf(locationURL, realm.Spec.Realm.Realm, dummyUserID))
 		w.WriteHeader(201)
 	})
 	server := httptest.NewServer(handler)
@@ -132,11 +158,12 @@ func TestClient_CreateUser(t *testing.T) {
 	}
 
 	// when
-	err := client.CreateUser(user, realm.Spec.Realm.Realm)
+	uid, err := client.CreateUser(user, realm.Spec.Realm.Realm)
 
 	// then
 	// correct path expected on httptest server
 	assert.NoError(t, err)
+	assert.Equal(t, uid, dummyUserID)
 }
 
 func TestClient_DeleteUser(t *testing.T) {
@@ -163,6 +190,43 @@ func TestClient_DeleteUser(t *testing.T) {
 	// then
 	// correct path expected on httptest server
 	assert.NoError(t, err)
+}
+
+func TestClient_FindUserByUsername(t *testing.T) {
+	// given
+	realm := getDummyRealm()
+	user := getExistingDummyUser()
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, fmt.Sprintf(UserFindByUsernamePath, realm.Spec.Realm.Realm, user.UserName), req.URL.String())
+		assert.Equal(t, req.Method, http.MethodGet)
+		json, err := jsoniter.Marshal(realm.Spec.Realm.Users)
+		assert.NoError(t, err)
+
+		size, err := w.Write(json)
+		assert.NoError(t, err)
+		assert.Equal(t, size, len(json))
+
+		w.WriteHeader(200)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client := Client{
+		requester: server.Client(),
+		URL:       server.URL,
+		token:     "dummy",
+	}
+
+	// when
+	userFound, err := client.FindUserByUsername(user.UserName, realm.Spec.Realm.Realm)
+
+	// then
+	// correct path expected on httptest server
+	assert.NoError(t, err)
+
+	// returned realm must equal dummy realm
+	assert.Equal(t, user, userFound)
 }
 
 func TestClient_ListUsersInGroup(t *testing.T) {
@@ -341,17 +405,8 @@ func TestClient_CreateGroup(t *testing.T) {
 	)
 
 	handle := withMethodSelection(t, map[string]http.HandlerFunc{
-		// When the client requests the groups to find the newly
-		// created one
-		http.MethodGet: withJSON(t, []*Group{
-			&Group{
-				ID:   createdGroupID,
-				Name: createdGroupName,
-			},
-		}, 200),
-
 		// When the client requests to create the group
-		http.MethodPost: withPathAssertion(t, 201, fmt.Sprintf(GroupCreatePath, realm.Spec.Realm.Realm)),
+		http.MethodPost: withPathAssertionLocationHeader(t, 201, fmt.Sprintf(GroupCreatePath, realm.Spec.Realm.Realm), createdGroupID),
 	})
 
 	request := func(c *Client) {
@@ -412,7 +467,7 @@ func TestClient_CreateGroupClientRole(t *testing.T) {
 
 	with := withPathAssertion(t, 201, fmt.Sprintf(GroupCreateClientRole, realm.Spec.Realm.Realm, groupID, clientID))
 	when := func(c *Client) {
-		err := c.CreateGroupClientRole(&v1alpha1.KeycloakUserRole{}, realm.Spec.Realm.Realm, clientID, groupID)
+		_, err := c.CreateGroupClientRole(&v1alpha1.KeycloakUserRole{}, realm.Spec.Realm.Realm, clientID, groupID)
 		assert.NoError(t, err)
 	}
 
@@ -479,7 +534,7 @@ func TestClient_CreateGroupRealmRole(t *testing.T) {
 	testClientHTTPRequest(
 		withPathAssertion(t, 201, expectedPath),
 		func(c *Client) {
-			err := c.CreateGroupRealmRole(&v1alpha1.KeycloakUserRole{}, realm.Spec.Realm.Realm, groupID)
+			_, err := c.CreateGroupRealmRole(&v1alpha1.KeycloakUserRole{}, realm.Spec.Realm.Realm, groupID)
 			assert.NoError(t, err)
 		},
 	)
@@ -556,6 +611,14 @@ func withJSON(t *testing.T, body interface{}, status int) http.HandlerFunc {
 func withPathAssertion(t *testing.T, status int, expectedPath string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, expectedPath, req.URL.Path)
+		w.WriteHeader(status)
+	}
+}
+
+func withPathAssertionLocationHeader(t *testing.T, status int, expectedPath string, uid string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, expectedPath, req.URL.Path)
+		w.Header().Set("Location", fmt.Sprintf("%s/%s", req.URL.Path, uid))
 		w.WriteHeader(status)
 	}
 }
