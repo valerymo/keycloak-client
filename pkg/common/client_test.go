@@ -37,7 +37,11 @@ const (
 	GroupGetRealmRoles                = "/auth/admin/realms/%s/groups/%s/role-mappings/realm"
 	GroupGetAvailableRealmRoles       = "/auth/admin/realms/%s/groups/%s/role-mappings/realm/available"
 	AuthenticationFlowUpdateExecution = "/auth/admin/realms/%s/authentication/flows/%s/executions"
+	AuthenticationFlowListExecution   = "/auth/admin/realms/%s/authentication/flows/%s/executions"
+	AuthenticationFlowCreateExecution = "/auth/admin/realms/%s/authentication/flows/%s/executions/execution"
 	TokenPath                         = "/auth/realms/master/protocol/openid-connect/token" // nolint
+	AuthenticationFlowCreatePath      = "/auth/admin/realms/%s/authentication/flows"
+	AuthenticationFlowListPath        = "/auth/admin/realms/%s/authentication/flows"
 )
 
 func getDummyRealm() *v1alpha1.KeycloakRealm {
@@ -570,6 +574,113 @@ func TestClient_ListAvailableGroupRealmRoles(t *testing.T) {
 			assert.NoError(t, err)
 		},
 	)
+}
+
+func TestClient_CreateAuthenticationFlow(t *testing.T) {
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(AuthenticationFlowCreatePath, realm.Spec.Realm.Realm)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 201, expectedPath),
+		func(c *Client) {
+			_, err := c.CreateAuthenticationFlow(AuthenticationFlow{}, realm.Spec.Realm.Realm)
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_ListAuthenticationFlows(t *testing.T) {
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(AuthenticationFlowListPath, realm.Spec.Realm.Realm)
+
+	testClientHTTPRequest(
+		withPathAssertion(t, 200, expectedPath),
+		func(c *Client) {
+			_, err := c.ListAuthenticationFlows(
+				realm.Spec.Realm.Realm)
+
+			assert.NoError(t, err)
+		},
+	)
+}
+
+func TestClient_FindAuthenticationFlowByAlias(t *testing.T) {
+	const (
+		existingAuthenticationFlowAlias string = "authdelay"
+		existingAuthenticationFlowID    string = "12345"
+	)
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(AuthenticationFlowListPath, realm.Spec.Realm.Realm)
+
+	handle := withPathAssertionBody(
+		t,
+		200,
+		expectedPath,
+		[]*AuthenticationFlow{&AuthenticationFlow{
+			Alias: existingAuthenticationFlowAlias,
+			ID:    existingAuthenticationFlowID,
+		}},
+	)
+
+	request := func(c *Client) {
+		// when the group exists
+		foundAuthenticationFlow, err := c.FindAuthenticationFlowByAlias(existingAuthenticationFlowAlias, realm.Spec.Realm.Realm)
+		// then return the group instance
+		assert.NoError(t, err)
+		assert.NotNil(t, foundAuthenticationFlow)
+		assert.Equal(t, existingAuthenticationFlowID, foundAuthenticationFlow.ID)
+
+		// when the autnetication flow doesn't exist
+		notFoundGroup, err := c.FindAuthenticationFlowByAlias("not-existing", "dummy")
+		// then return `nil`
+		assert.NoError(t, err)
+		assert.Nil(t, notFoundGroup)
+	}
+
+	testClientHTTPRequest(handle, request)
+
+}
+
+func TestClient_AddExecutionToAuthenticatonFlow(t *testing.T) {
+	const (
+		authenticationFlowAlias      string = "authdelay"
+		providerID                   string = "delay-authentication"
+		existingAuthenticationFlowID string = "12345"
+	)
+	realm := getDummyRealm()
+	expectedPath := fmt.Sprintf(AuthenticationFlowCreateExecution, realm.Spec.Realm.Realm, authenticationFlowAlias)
+
+	handle := withMethodSelection(t, map[string]http.HandlerFunc{
+		http.MethodPut:  withPathAssertion(t, 200, fmt.Sprintf(AuthenticationFlowUpdateExecution, realm.Spec.Realm.Realm, authenticationFlowAlias)),
+		http.MethodPost: withPathAssertion(t, 201, expectedPath),
+		http.MethodGet: withPathAssertionBody(
+			t,
+			200,
+			fmt.Sprintf(AuthenticationFlowListExecution, realm.Spec.Realm.Realm, authenticationFlowAlias),
+			[]*v1alpha1.AuthenticationExecutionInfo{
+				&v1alpha1.AuthenticationExecutionInfo{
+					Alias:      authenticationFlowAlias,
+					ID:         existingAuthenticationFlowID,
+					ProviderID: providerID,
+				},
+			},
+		),
+	})
+	request := func(c *Client) {
+		err := c.AddExecutionToAuthenticatonFlow(authenticationFlowAlias,
+			realm.Spec.Realm.Realm, providerID, Required)
+
+		assert.NoError(t, err)
+
+		// // requirement empty
+		// err = c.AddExecutionToAuthenticatonFlow(authenticationFlowAlias,
+		// 	realm.Spec.Realm.Realm, providerID, "")
+		// assert.NoError(t, err)
+
+	}
+
+	testClientHTTPRequest(handle, request)
+
 }
 
 // Utility function to create a test server, register a given handler and perform
