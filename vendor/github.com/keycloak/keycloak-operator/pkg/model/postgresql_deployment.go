@@ -4,13 +4,40 @@ import (
 	"github.com/keycloak/keycloak-operator/pkg/apis/keycloak/v1alpha1"
 	v13 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
-	return &v13.Deployment{
+func getPostgresResources(cr *v1alpha1.Keycloak) v1.ResourceRequirements {
+	requirements := v1.ResourceRequirements{}
+	requirements.Limits = v1.ResourceList{}
+	requirements.Requests = v1.ResourceList{}
+
+	cpu, err := resource.ParseQuantity(cr.Spec.PostgresDeploymentSpec.Resources.Requests.Cpu().String())
+	if err == nil && cpu.String() != "0" {
+		requirements.Requests[v1.ResourceCPU] = cpu
+	}
+	memory, err := resource.ParseQuantity(cr.Spec.PostgresDeploymentSpec.Resources.Requests.Memory().String())
+	if err == nil && memory.String() != "0" {
+		requirements.Requests[v1.ResourceMemory] = memory
+	}
+
+	cpu, err = resource.ParseQuantity(cr.Spec.PostgresDeploymentSpec.Resources.Limits.Cpu().String())
+	if err == nil && cpu.String() != "0" {
+		requirements.Limits[v1.ResourceCPU] = cpu
+	}
+	memory, err = resource.ParseQuantity(cr.Spec.PostgresDeploymentSpec.Resources.Limits.Memory().String())
+	if err == nil && memory.String() != "0" {
+		requirements.Limits[v1.ResourceMemory] = memory
+	}
+	return requirements
+}
+
+func PostgresqlDeployment(cr *v1alpha1.Keycloak, isOpenshift bool) *v13.Deployment {
+	v13Deployment := &v13.Deployment{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      PostgresqlDeploymentName,
 			Namespace: cr.Namespace,
@@ -39,7 +66,7 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 					Containers: []v1.Container{
 						{
 							Name:  PostgresqlDeploymentName,
-							Image: PostgresqlImage,
+							Image: Images.Images[PostgresqlImage],
 							Ports: []v1.ContainerPort{
 								{
 									ContainerPort: 5432,
@@ -54,7 +81,7 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 										Command: []string{
 											"/bin/sh",
 											"-c",
-											"psql -h 127.0.0.1 -U $POSTGRES_USER -q -d $POSTGRES_DB -c 'SELECT 1'",
+											"psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'",
 										},
 									},
 								},
@@ -70,7 +97,7 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 							},
 							Env: []v1.EnvVar{
 								{
-									Name: "POSTGRES_USER",
+									Name: "POSTGRESQL_USER",
 									ValueFrom: &v1.EnvVarSource{
 										SecretKeyRef: &v1.SecretKeySelector{
 											LocalObjectReference: v1.LocalObjectReference{
@@ -81,18 +108,7 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 									},
 								},
 								{
-									Name: "PGUSER",
-									ValueFrom: &v1.EnvVarSource{
-										SecretKeyRef: &v1.SecretKeySelector{
-											LocalObjectReference: v1.LocalObjectReference{
-												Name: DatabaseSecretName,
-											},
-											Key: DatabaseSecretUsernameProperty,
-										},
-									},
-								},
-								{
-									Name: "POSTGRES_PASSWORD",
+									Name: "POSTGRESQL_PASSWORD",
 									ValueFrom: &v1.EnvVarSource{
 										SecretKeyRef: &v1.SecretKeySelector{
 											LocalObjectReference: v1.LocalObjectReference{
@@ -103,21 +119,17 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 									},
 								},
 								{
-									Name:  "POSTGRES_DB",
+									Name:  "POSTGRESQL_DATABASE",
 									Value: PostgresqlDatabase,
-								},
-								{
-									// Due to permissions issue, we need to create a subdirectory in the PVC
-									Name:  "PGDATA",
-									Value: "/var/lib/postgresql/data/pgdata",
 								},
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      PostgresqlPersistentVolumeName,
-									MountPath: "/var/lib/postgresql/data",
+									MountPath: PostgresqlPersistentVolumeMountPath,
 								},
 							},
+							Resources: getPostgresResources(cr),
 						},
 					},
 					Volumes: []v1.Volume{
@@ -134,6 +146,34 @@ func PostgresqlDeployment(cr *v1alpha1.Keycloak) *v13.Deployment {
 			},
 			Strategy: v13.DeploymentStrategy{
 				Type: v13.RecreateDeploymentStrategyType,
+			},
+		},
+	}
+
+	if !isOpenshift {
+		v13Deployment.Spec.Template.Spec.InitContainers = getPostgresqlDeploymentInitContainer(cr)
+	}
+	return v13Deployment
+}
+
+func getPostgresqlDeploymentInitContainer(cr *v1alpha1.Keycloak) []v1.Container {
+	return []v1.Container{
+		{
+			Name:  "init-pvc",
+			Image: Images.Images[PostgresqlImage],
+			SecurityContext: &v1.SecurityContext{
+				RunAsUser: pointer.Int64Ptr(0),
+			},
+			Command: []string{
+				"sh",
+				"-c",
+				"chown -R postgres:postgres " + PostgresqlPersistentVolumeMountPath,
+			},
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      PostgresqlPersistentVolumeName,
+					MountPath: PostgresqlPersistentVolumeMountPath,
+				},
 			},
 		},
 	}
@@ -155,7 +195,7 @@ func PostgresqlDeploymentReconciled(cr *v1alpha1.Keycloak, currentState *v13.Dep
 	reconciled.Spec.Template.Spec.Containers = []v1.Container{
 		{
 			Name:  PostgresqlDeploymentName,
-			Image: PostgresqlImage,
+			Image: Images.Images[PostgresqlImage],
 			Ports: []v1.ContainerPort{
 				{
 					ContainerPort: 5432,
@@ -170,7 +210,7 @@ func PostgresqlDeploymentReconciled(cr *v1alpha1.Keycloak, currentState *v13.Dep
 						Command: []string{
 							"/bin/sh",
 							"-c",
-							"psql -h 127.0.0.1 -U $POSTGRES_USER -q -d $POSTGRES_DB -c 'SELECT 1'",
+							"psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'",
 						},
 					},
 				},
@@ -186,7 +226,7 @@ func PostgresqlDeploymentReconciled(cr *v1alpha1.Keycloak, currentState *v13.Dep
 			},
 			Env: []v1.EnvVar{
 				{
-					Name: "POSTGRES_USER",
+					Name: "POSTGRESQL_USER",
 					ValueFrom: &v1.EnvVarSource{
 						SecretKeyRef: &v1.SecretKeySelector{
 							LocalObjectReference: v1.LocalObjectReference{
@@ -197,18 +237,7 @@ func PostgresqlDeploymentReconciled(cr *v1alpha1.Keycloak, currentState *v13.Dep
 					},
 				},
 				{
-					Name: "PGUSER",
-					ValueFrom: &v1.EnvVarSource{
-						SecretKeyRef: &v1.SecretKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: DatabaseSecretName,
-							},
-							Key: DatabaseSecretUsernameProperty,
-						},
-					},
-				},
-				{
-					Name: "POSTGRES_PASSWORD",
+					Name: "POSTGRESQL_PASSWORD",
 					ValueFrom: &v1.EnvVarSource{
 						SecretKeyRef: &v1.SecretKeySelector{
 							LocalObjectReference: v1.LocalObjectReference{
@@ -219,21 +248,17 @@ func PostgresqlDeploymentReconciled(cr *v1alpha1.Keycloak, currentState *v13.Dep
 					},
 				},
 				{
-					Name:  "POSTGRES_DB",
+					Name:  "POSTGRESQL_DATABASE",
 					Value: PostgresqlDatabase,
-				},
-				{
-					// Due to permissions issue, we need to create a subdirectory in the PVC
-					Name:  "PGDATA",
-					Value: "/var/lib/postgresql/data/pgdata",
 				},
 			},
 			VolumeMounts: []v1.VolumeMount{
 				{
 					Name:      PostgresqlPersistentVolumeName,
-					MountPath: "/var/lib/postgresql/data",
+					MountPath: PostgresqlPersistentVolumeMountPath,
 				},
 			},
+			Resources: getPostgresResources(cr),
 		},
 	}
 	reconciled.Spec.Template.Spec.Volumes = []v1.Volume{

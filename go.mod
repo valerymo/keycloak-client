@@ -4,10 +4,10 @@ go 1.13
 
 require (
 	github.com/json-iterator/go v1.1.10
-	github.com/keycloak/keycloak-operator v0.0.0-20200129141231-e99da8a15034
+	github.com/keycloak/keycloak-operator v0.0.0-20210506103913-57d81e278bcb
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.4.2
-	github.com/stretchr/testify v1.4.0
+	github.com/sirupsen/logrus v1.5.0
+	github.com/stretchr/testify v1.6.1
 	k8s.io/apimachinery v0.19.4
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.6.3
