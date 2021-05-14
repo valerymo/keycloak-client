@@ -19,7 +19,7 @@ func KeycloakAdminSecret(cr *v1alpha1.Keycloak) *v1.Secret {
 		},
 		Data: map[string][]byte{
 			AdminUsernameProperty: []byte("admin"),
-			AdminPasswordProperty: []byte(RandStringRunes(10)),
+			AdminPasswordProperty: []byte(GenerateRandomString(10)),
 		},
 		Type: "Opaque",
 	}
@@ -34,12 +34,11 @@ func KeycloakAdminSecretSelector(cr *v1alpha1.Keycloak) client.ObjectKey {
 
 func KeycloakAdminSecretReconciled(cr *v1alpha1.Keycloak, currentState *v1.Secret) *v1.Secret {
 	reconciled := currentState.DeepCopy()
-	// K8s automatically converts StringData to Data when getting the resource
 	if val, ok := reconciled.Data[AdminUsernameProperty]; !ok || len(val) == 0 {
 		reconciled.Data[AdminUsernameProperty] = []byte("admin")
 	}
 	if val, ok := reconciled.Data[AdminPasswordProperty]; !ok || len(val) == 0 {
-		reconciled.Data[AdminPasswordProperty] = []byte(RandStringRunes(10))
+		reconciled.Data[AdminPasswordProperty] = []byte(GenerateRandomString(10))
 	}
 	return reconciled
 }

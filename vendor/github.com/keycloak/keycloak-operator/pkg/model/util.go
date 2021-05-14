@@ -1,22 +1,41 @@
 package model
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
-	"math/rand"
+	"net"
+	"strconv"
 	"strings"
+	"unicode"
 
-	v13 "k8s.io/api/apps/v1"
+	"github.com/keycloak/keycloak-operator/pkg/apis/keycloak/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 )
 
-// Copy pasted from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+// Copy pasted from https://blog.questionable.services/article/generating-secure-random-numbers-crypto-rand/
 
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+// GenerateRandomBytes returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func GenerateRandomBytes(n int) []byte {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
 	}
-	return string(b)
+	return b
+}
+
+// GenerateRandomString returns a URL-safe, base64 encoded
+// securely generated random string.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func GenerateRandomString(s int) string {
+	b := GenerateRandomBytes(s)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 func GetRealmUserSecretName(keycloakNamespace, realmName, userName string) string {
@@ -44,9 +63,9 @@ func SanitizeResourceName(name string) string {
 			continue
 		}
 
-		// Uppercase letters
+		// Uppercase letters are transformed to lowercase
 		if ascii >= 65 && ascii <= 90 {
-			sb.WriteRune(char)
+			sb.WriteRune(unicode.ToLower(char))
 			continue
 		}
 
@@ -79,46 +98,124 @@ func SanitizeResourceName(name string) string {
 	return sb.String()
 }
 
-// Get image string from the statefulset. Default to RHSSOImage string
-func GetCurrentKeycloakImage(currentState *v13.StatefulSet) string {
-	for _, ele := range currentState.Spec.Template.Spec.Containers {
-		if ele.Name == KeycloakDeploymentName {
-			return ele.Image
-		}
-	}
-	return RHSSOImage
+func IsIP(host []byte) bool {
+	return net.ParseIP(string(host)) != nil
 }
 
-// Split a full image string (e.g. quay.io/keycloak/keycloak:7.0.1 or registry.access.redhat.com/redhat-sso-7/sso73-openshift:1.0 ) into it's repo and individual versions
-func GetImageRepoAndVersion(image string) (string, string, string, string) {
-	imageRepo, imageMajor, imageMinor, imagePatch := "", "", "", ""
+func GetExternalDatabaseHost(secret *v1.Secret) string {
+	host := secret.Data[DatabaseSecretExternalAddressProperty]
+	return string(host)
+}
 
-	// Split the string on : which will leave the repo and tag
-	imageStrings := strings.Split(image, ":")
-
-	if len(imageStrings) > 0 {
-		imageRepo = imageStrings[0]
+func GetExternalDatabaseName(secret *v1.Secret) string {
+	if secret == nil {
+		return PostgresqlDatabase
 	}
 
-	// If somehow the tag doesn't exist, return with empty strings for the versions
-	if len(imageStrings) == 1 {
-		return imageRepo, imageMajor, imageMinor, imagePatch
+	name := secret.Data[DatabaseSecretDatabaseProperty]
+	return string(name)
+}
+
+func GetExternalDatabasePort(secret *v1.Secret) int32 {
+	if secret == nil {
+		return PostgresDefaultPort
 	}
 
-	// Split the image tag on . to separate the version numbers
-	imageTagStrings := strings.Split(imageStrings[1], ".")
+	port := secret.Data[DatabaseSecretExternalPortProperty]
+	parsed, err := strconv.ParseInt(string(port), 10, 32)
+	if err != nil {
+		return PostgresDefaultPort
+	}
+	return int32(parsed)
+}
 
-	if len(imageTagStrings) > 0 {
-		imageMajor = imageTagStrings[0]
+// This function favors values in "a".
+func MergeEnvs(a []v1.EnvVar, b []v1.EnvVar) []v1.EnvVar {
+	for _, bb := range b {
+		found := false
+		for _, aa := range a {
+			if aa.Name == bb.Name {
+				aa.Value = bb.Value
+				found = true
+				break
+			}
+		}
+		if !found {
+			a = append(a, bb)
+		}
+	}
+	return a
+}
+
+// returned roles are always from a
+func RoleDifferenceIntersection(a []v1alpha1.RoleRepresentation, b []v1alpha1.RoleRepresentation) (d []v1alpha1.RoleRepresentation, i []v1alpha1.RoleRepresentation) {
+	for _, role := range a {
+		if hasMatchingRole(b, role) {
+			i = append(i, role)
+		} else {
+			d = append(d, role)
+		}
+	}
+	return d, i
+}
+
+func hasMatchingRole(roles []v1alpha1.RoleRepresentation, otherRole v1alpha1.RoleRepresentation) bool {
+	for _, role := range roles {
+		if roleMatches(role, otherRole) {
+			return true
+		}
+	}
+	return false
+}
+
+func roleMatches(a v1alpha1.RoleRepresentation, b v1alpha1.RoleRepresentation) bool {
+	if a.ID != "" && b.ID != "" {
+		return a.ID == b.ID
+	}
+	return a.Name == b.Name
+}
+
+// FIXME Find a better way to refactor this code with role difference part above
+// returned clientScopes are always from a
+func ClientScopeDifferenceIntersection(a []v1alpha1.KeycloakClientScope, b []v1alpha1.KeycloakClientScope) (d []v1alpha1.KeycloakClientScope, i []v1alpha1.KeycloakClientScope) {
+	for _, clientScope := range a {
+		if hasMatchingClientScope(b, clientScope) {
+			i = append(i, clientScope)
+		} else {
+			d = append(d, clientScope)
+		}
+	}
+	return d, i
+}
+
+func hasMatchingClientScope(clientScopes []v1alpha1.KeycloakClientScope, otherClientScope v1alpha1.KeycloakClientScope) bool {
+	for _, clientScope := range clientScopes {
+		if clientScopeMatches(clientScope, otherClientScope) {
+			return true
+		}
+	}
+	return false
+}
+
+func clientScopeMatches(a v1alpha1.KeycloakClientScope, b v1alpha1.KeycloakClientScope) bool {
+	if a.ID != "" && b.ID != "" {
+		return a.ID == b.ID
+	}
+	return a.Name == b.Name
+}
+
+func FilterClientScopesByNames(clientScopes []v1alpha1.KeycloakClientScope, names []string) (filteredScopes []v1alpha1.KeycloakClientScope) {
+	hashMap := make(map[string]v1alpha1.KeycloakClientScope)
+
+	for _, scope := range clientScopes {
+		hashMap[scope.Name] = scope
 	}
 
-	if len(imageTagStrings) > 1 {
-		imageMinor = imageTagStrings[1]
+	for _, name := range names {
+		if scope, retrieved := hashMap[name]; retrieved {
+			filteredScopes = append(filteredScopes, scope)
+		}
 	}
 
-	if len(imageTagStrings) > 2 {
-		imagePatch = imageTagStrings[2]
-	}
-
-	return imageRepo, imageMajor, imageMinor, imagePatch
+	return filteredScopes
 }
