@@ -401,6 +401,60 @@ func TestClient_FindGroupByName(t *testing.T) {
 	testClientHTTPRequest(handle, request)
 }
 
+func TestClient_FindGroupByPath(t *testing.T) {
+	const (
+		existingGroupName string = "gotcha"
+		existingGroupID   string = "12348"
+	)
+	realm := getDummyRealm()
+
+	handle := withPathAssertionBody(
+		t,
+		200,
+		fmt.Sprintf(GroupListPath, realm.Spec.Realm.Realm),
+		[]*Group{
+			{
+				ID:   "12345",
+				Name: "root",
+				SubGroups: []*Group{
+					{
+						Name: "skip-me",
+						ID:   "12346",
+					},
+					{
+						Name: "almost-there",
+						ID:   "12347",
+						SubGroups: []*Group{
+							{
+								Name: "gotcha",
+								ID:   "12348",
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+
+	request := func(c *Client) {
+		// when the group exists
+		foundGroup, err := c.FindGroupByPath("root/almost-there/gotcha", "dummy")
+		// then return the group instance
+		assert.NoError(t, err)
+		assert.NotNil(t, foundGroup)
+		assert.Equal(t, existingGroupID, foundGroup.ID)
+		assert.Equal(t, existingGroupName, foundGroup.Name)
+
+		// when the group doesn't exist
+		notFoundGroup, err := c.FindGroupByName("root/oops/gotcha", "dummy")
+		// then return `nil`
+		assert.NoError(t, err)
+		assert.Nil(t, notFoundGroup)
+	}
+
+	testClientHTTPRequest(handle, request)
+}
+
 func TestClient_CreateGroup(t *testing.T) {
 	realm := getDummyRealm()
 	const (
