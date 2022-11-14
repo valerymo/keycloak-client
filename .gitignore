@@ -25,3 +25,8 @@ _testmain.go
 
 .idea
 cli
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
