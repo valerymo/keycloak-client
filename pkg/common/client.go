@@ -45,51 +45,34 @@ func (c *Client) create(obj T, resourcePath, resourceName string) (string, error
 		logrus.Errorf("error %+v marshalling object", err)
 		return "", nil
 	}
+	return c.sendCreateRequest(jsonValue, resourcePath, resourceName)
+}
 
-	req, err := http.NewRequest(
-		"POST",
-		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
-		bytes.NewBuffer(jsonValue),
-	)
+func (c *Client) CreateRealm(obj T) (string, error) {
+	jsonValue, err := json.Marshal(obj)
 	if err != nil {
-		logrus.Errorf("error creating POST %s request %+v", resourceName, err)
-		return "", errors.Wrapf(err, "error creating POST %s request", resourceName)
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
 	}
+	return c.sendCreateRequest(jsonValue, "realms", "realm")
+}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token))
-	res, err := c.requester.Do(req)
-
+func (c *Client) CreateClient(obj T, realmName string) (string, error) {
+	jsonValue, err := json.Marshal(obj)
 	if err != nil {
-		logrus.Errorf("error on request %+v", err)
-		return "", errors.Wrapf(err, "error performing POST %s request", resourceName)
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
 	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 201 && res.StatusCode != 204 {
-		return "", fmt.Errorf("failed to create %s: (%d) %s", resourceName, res.StatusCode, res.Status)
-	}
-
-	if resourceName == "client" {
-		d, _ := ioutil.ReadAll(res.Body)
-		fmt.Println("user response ", string(d))
-	}
-
-	location := strings.Split(res.Header.Get("Location"), "/")
-	uid := location[len(location)-1]
-	return uid, nil
+	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/clients", realmName), "client")
 }
 
-func (c *Client) CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error) {
-	return c.create(realm.Spec.Realm, "realms", "realm")
-}
-
-func (c *Client) CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error) {
-	return c.create(client, fmt.Sprintf("realms/%s/clients", realmName), "client")
-}
-
-func (c *Client) CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error) {
-	return c.create(user, fmt.Sprintf("realms/%s/users", realmName), "user")
+func (c *Client) CreateUser(obj T, realmName string) (string, error) {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
+	}
+	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/users", realmName), "user")
 }
 
 func (c *Client) CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error) {
@@ -366,43 +349,34 @@ func (c *Client) update(obj T, resourcePath, resourceName string) error {
 	if err != nil {
 		return nil
 	}
+	return c.sendUpdateRequest(jsonValue, resourcePath, resourceName)
+}
 
-	req, err := http.NewRequest(
-		"PUT",
-		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
-		bytes.NewBuffer(jsonValue),
-	)
+func (c *Client) UpdateRealm(obj T, realmName string) error {
+	jsonValue, err := json.Marshal(obj)
 	if err != nil {
-		logrus.Errorf("error creating UPDATE %s request %+v", resourceName, err)
-		return errors.Wrapf(err, "error creating UPDATE %s request", resourceName)
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
 	}
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s", realmName), "realm") //realm Name, not id?
+}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+c.token)
-	res, err := c.requester.Do(req)
+func (c *Client) UpdateClient(obj T, realmName string, clientId string) error {
+	jsonValue, err := json.Marshal(obj)
 	if err != nil {
-		logrus.Errorf("error on request %+v", err)
-		return errors.Wrapf(err, "error performing UPDATE %s request", resourceName)
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
 	}
-	defer res.Body.Close()
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		logrus.Errorf("failed to UPDATE %s %v", resourceName, res.Status)
-		return fmt.Errorf("failed to UPDATE %s: (%d) %s", resourceName, res.StatusCode, res.Status)
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/clients/%s", realmName, clientId), "client")
+}
+
+func (c *Client) UpdateUser(obj T, realmName string, userId string) error {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
 	}
-
-	return nil
-}
-
-func (c *Client) UpdateRealm(realm *v1alpha1.KeycloakRealm) error {
-	return c.update(realm, fmt.Sprintf("realms/%s", realm.Spec.Realm.ID), "realm")
-}
-
-func (c *Client) UpdateClient(specClient *v1alpha1.KeycloakAPIClient, realmName string) error {
-	return c.update(specClient, fmt.Sprintf("realms/%s/clients/%s", realmName, specClient.ID), "client")
-}
-
-func (c *Client) UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error {
-	return c.update(specUser, fmt.Sprintf("realms/%s/users/%s", realmName, specUser.ID), "user")
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/users/%s", realmName, userId), "user")
 }
 
 func (c *Client) UpdateIdentityProvider(specIdentityProvider *v1alpha1.KeycloakIdentityProvider, realmName string) error {
@@ -905,7 +879,7 @@ func (c *Client) SetGroupChild(groupID, realmName string, childGroup *Group) err
 		}
 	}
 
-	// Otherwise, set the child group
+	// Otherwise, create the child group
 	_, err = c.create(
 		childGroup,
 		fmt.Sprintf("realms/%s/groups/%s/children", realmName, groupID),
@@ -1144,21 +1118,21 @@ func defaultRequester() Requester {
 type KeycloakInterface interface {
 	Ping() error
 
-	CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error)
+	CreateRealm(obj T) (string, error)
 	GetRealm(realmName string) (*v1alpha1.KeycloakRealm, error)
-	UpdateRealm(specRealm *v1alpha1.KeycloakRealm) error
+	UpdateRealm(obj T, realmName string) error
 	DeleteRealm(realmName string) error
 	ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error)
 
-	CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error)
+	CreateClient(obj T, realmName string) (string, error)
 	GetClient(clientID, realmName string) (*v1alpha1.KeycloakAPIClient, error)
 	GetClientSecret(clientID, realmName string) (string, error)
 	GetClientInstall(clientID, realmName string) ([]byte, error)
-	UpdateClient(specClient *v1alpha1.KeycloakAPIClient, realmName string) error
+	UpdateClient(obj T, realmName string, clientId string) error
 	DeleteClient(clientID, realmName string) error
 	ListClients(realmName string) ([]*v1alpha1.KeycloakAPIClient, error)
 
-	CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error)
+	CreateUser(obj T, realmName string) (string, error)
 	CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error)
 	RemoveFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) error
 	GetUserFederatedIdentities(userName string, realmName string) ([]v1alpha1.FederatedIdentity, error)
@@ -1166,7 +1140,7 @@ type KeycloakInterface interface {
 	FindUserByEmail(email, realm string) (*v1alpha1.KeycloakAPIUser, error)
 	FindUserByUsername(name, realm string) (*v1alpha1.KeycloakAPIUser, error)
 	GetUser(userID, realmName string) (*v1alpha1.KeycloakAPIUser, error)
-	UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error
+	UpdateUser(obj T, realmName string, userId string) error
 	DeleteUser(userID, realmName string) error
 	ListUsers(realmName string) ([]*v1alpha1.KeycloakAPIUser, error)
 	ListUsersInGroup(realmName, groupID string) ([]*v1alpha1.KeycloakAPIUser, error)
@@ -1226,7 +1200,7 @@ type KeycloakInterface interface {
 
 //go:generate moq -out keycloakClientFactory_moq.go . KeycloakClientFactory
 
-//KeycloakClientFactory interface
+// KeycloakClientFactory interface
 type KeycloakClientFactory interface {
 	AuthenticatedClient(kc v1alpha1.Keycloak) (KeycloakInterface, error)
 }
@@ -1261,4 +1235,66 @@ func (i *LocalConfigKeycloakFactory) AuthenticatedClient(kc v1alpha1.Keycloak) (
 		return nil, err
 	}
 	return client, nil
+}
+
+func (c *Client) sendCreateRequest(jsonValue []byte, resourcePath, resourceName string) (string, error) {
+	req, err := http.NewRequest(
+		"POST",
+		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		logrus.Errorf("error creating POST %s request %+v", resourceName, err)
+		return "", errors.Wrapf(err, "error creating POST %s request", resourceName)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	res, err := c.requester.Do(req)
+
+	if err != nil {
+		logrus.Errorf("error on request %+v", err)
+		return "", errors.Wrapf(err, "error performing POST %s request", resourceName)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 201 && res.StatusCode != 204 {
+		return "", fmt.Errorf("failed to create %s: (%d) %s", resourceName, res.StatusCode, res.Status)
+	}
+
+	if resourceName == "client" {
+		d, _ := ioutil.ReadAll(res.Body)
+		fmt.Println("user response ", string(d))
+	}
+
+	location := strings.Split(res.Header.Get("Location"), "/")
+	uid := location[len(location)-1]
+	return uid, nil
+}
+
+func (c *Client) sendUpdateRequest(jsonValue []byte, resourcePath, resourceName string) error {
+	req, err := http.NewRequest(
+		"PUT",
+		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		logrus.Errorf("error creating UPDATE %s request %+v", resourceName, err)
+		return errors.Wrapf(err, "error creating UPDATE %s request", resourceName)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+c.token)
+	res, err := c.requester.Do(req)
+	if err != nil {
+		logrus.Errorf("error on request %+v", err)
+		return errors.Wrapf(err, "error performing UPDATE %s request", resourceName)
+	}
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		logrus.Errorf("failed to UPDATE %s %v", resourceName, res.Status)
+		return fmt.Errorf("failed to UPDATE %s: (%d) %s", resourceName, res.StatusCode, res.Status)
+	}
+
+	return nil
 }
