@@ -45,34 +45,51 @@ func (c *Client) create(obj T, resourcePath, resourceName string) (string, error
 		logrus.Errorf("error %+v marshalling object", err)
 		return "", nil
 	}
-	return c.sendCreateRequest(jsonValue, resourcePath, resourceName)
+
+	req, err := http.NewRequest(
+		"POST",
+		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		logrus.Errorf("error creating POST %s request %+v", resourceName, err)
+		return "", errors.Wrapf(err, "error creating POST %s request", resourceName)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	res, err := c.requester.Do(req)
+
+	if err != nil {
+		logrus.Errorf("error on request %+v", err)
+		return "", errors.Wrapf(err, "error performing POST %s request", resourceName)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 201 && res.StatusCode != 204 {
+		return "", fmt.Errorf("failed to create %s: (%d) %s", resourceName, res.StatusCode, res.Status)
+	}
+
+	if resourceName == "client" {
+		d, _ := ioutil.ReadAll(res.Body)
+		fmt.Println("user response ", string(d))
+	}
+
+	location := strings.Split(res.Header.Get("Location"), "/")
+	uid := location[len(location)-1]
+	return uid, nil
 }
 
-func (c *Client) CreateRealm(obj T) (string, error) {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return "", nil
-	}
-	return c.sendCreateRequest(jsonValue, "realms", "realm")
+func (c *Client) CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error) {
+	return c.create(realm.Spec.Realm, "realms", "realm")
 }
 
-func (c *Client) CreateClient(obj T, realmName string) (string, error) {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return "", nil
-	}
-	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/clients", realmName), "client")
+func (c *Client) CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error) {
+	return c.create(client, fmt.Sprintf("realms/%s/clients", realmName), "client")
 }
 
-func (c *Client) CreateUser(obj T, realmName string) (string, error) {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return "", nil
-	}
-	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/users", realmName), "user")
+func (c *Client) CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error) {
+	return c.create(user, fmt.Sprintf("realms/%s/users", realmName), "user")
 }
 
 func (c *Client) CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error) {
@@ -349,34 +366,43 @@ func (c *Client) update(obj T, resourcePath, resourceName string) error {
 	if err != nil {
 		return nil
 	}
-	return c.sendUpdateRequest(jsonValue, resourcePath, resourceName)
+
+	req, err := http.NewRequest(
+		"PUT",
+		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		logrus.Errorf("error creating UPDATE %s request %+v", resourceName, err)
+		return errors.Wrapf(err, "error creating UPDATE %s request", resourceName)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+c.token)
+	res, err := c.requester.Do(req)
+	if err != nil {
+		logrus.Errorf("error on request %+v", err)
+		return errors.Wrapf(err, "error performing UPDATE %s request", resourceName)
+	}
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		logrus.Errorf("failed to UPDATE %s %v", resourceName, res.Status)
+		return fmt.Errorf("failed to UPDATE %s: (%d) %s", resourceName, res.StatusCode, res.Status)
+	}
+
+	return nil
 }
 
-func (c *Client) UpdateRealm(obj T, realmName string) error {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return err
-	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s", realmName), "realm") //realm Name, not id?
+func (c *Client) UpdateRealm(realm *v1alpha1.KeycloakRealm) error {
+	return c.update(realm, fmt.Sprintf("realms/%s", realm.Spec.Realm.ID), "realm")
 }
 
-func (c *Client) UpdateClient(obj T, realmName string, clientId string) error {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return err
-	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/clients/%s", realmName, clientId), "client")
+func (c *Client) UpdateClient(specClient *v1alpha1.KeycloakAPIClient, realmName string) error {
+	return c.update(specClient, fmt.Sprintf("realms/%s/clients/%s", realmName, specClient.ID), "client")
 }
 
-func (c *Client) UpdateUser(obj T, realmName string, userId string) error {
-	jsonValue, err := json.Marshal(obj)
-	if err != nil {
-		logrus.Errorf("error %+v marshalling object", err)
-		return err
-	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/users/%s", realmName, userId), "user")
+func (c *Client) UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error {
+	return c.update(specUser, fmt.Sprintf("realms/%s/users/%s", realmName, specUser.ID), "user")
 }
 
 func (c *Client) UpdateIdentityProvider(specIdentityProvider *v1alpha1.KeycloakIdentityProvider, realmName string) error {
@@ -879,7 +905,7 @@ func (c *Client) SetGroupChild(groupID, realmName string, childGroup *Group) err
 		}
 	}
 
-	// Otherwise, create the child group
+	// Otherwise, set the child group
 	_, err = c.create(
 		childGroup,
 		fmt.Sprintf("realms/%s/groups/%s/children", realmName, groupID),
@@ -1118,21 +1144,27 @@ func defaultRequester() Requester {
 type KeycloakInterface interface {
 	Ping() error
 
-	CreateRealm(obj T) (string, error)
+	CreateRealmRhbk(obj T) (string, error)
+	UpdateRealmRhbk(obj T, realmName string) error
+	CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error)
 	GetRealm(realmName string) (*v1alpha1.KeycloakRealm, error)
-	UpdateRealm(obj T, realmName string) error
+	UpdateRealm(specRealm *v1alpha1.KeycloakRealm) error
 	DeleteRealm(realmName string) error
 	ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error)
 
-	CreateClient(obj T, realmName string) (string, error)
+	CreateClientRhbk(obj T, realmName string) (string, error)
+	UpdateClientRhbk(obj T, realmName string, clientId string) error
+	CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error)
 	GetClient(clientID, realmName string) (*v1alpha1.KeycloakAPIClient, error)
 	GetClientSecret(clientID, realmName string) (string, error)
 	GetClientInstall(clientID, realmName string) ([]byte, error)
-	UpdateClient(obj T, realmName string, clientId string) error
+	UpdateClient(specClient *v1alpha1.KeycloakAPIClient, realmName string) error
 	DeleteClient(clientID, realmName string) error
 	ListClients(realmName string) ([]*v1alpha1.KeycloakAPIClient, error)
 
-	CreateUser(obj T, realmName string) (string, error)
+	CreateUserRhbk(obj T, realmName string) (string, error)
+	UpdateUserRhbk(obj T, realmName string, userId string) error
+	CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error)
 	CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error)
 	RemoveFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) error
 	GetUserFederatedIdentities(userName string, realmName string) ([]v1alpha1.FederatedIdentity, error)
@@ -1140,7 +1172,7 @@ type KeycloakInterface interface {
 	FindUserByEmail(email, realm string) (*v1alpha1.KeycloakAPIUser, error)
 	FindUserByUsername(name, realm string) (*v1alpha1.KeycloakAPIUser, error)
 	GetUser(userID, realmName string) (*v1alpha1.KeycloakAPIUser, error)
-	UpdateUser(obj T, realmName string, userId string) error
+	UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error
 	DeleteUser(userID, realmName string) error
 	ListUsers(realmName string) ([]*v1alpha1.KeycloakAPIUser, error)
 	ListUsersInGroup(realmName, groupID string) ([]*v1alpha1.KeycloakAPIUser, error)
@@ -1297,4 +1329,58 @@ func (c *Client) sendUpdateRequest(jsonValue []byte, resourcePath, resourceName 
 	}
 
 	return nil
+}
+
+func (c *Client) CreateRealmRhbk(obj T) (string, error) {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
+	}
+	return c.sendCreateRequest(jsonValue, "realms", "realm")
+}
+
+func (c *Client) CreateClientRhbk(obj T, realmName string) (string, error) {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
+	}
+	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/clients", realmName), "client")
+}
+
+func (c *Client) CreateUserRhbk(obj T, realmName string) (string, error) {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return "", nil
+	}
+	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/users", realmName), "user")
+}
+
+func (c *Client) UpdateRealmRhbk(obj T, realmName string) error {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
+	}
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s", realmName), "realm") //realm Name, not id?
+}
+
+func (c *Client) UpdateClientRhbk(obj T, realmName string, clientId string) error {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
+	}
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/clients/%s", realmName, clientId), "client")
+}
+
+func (c *Client) UpdateUserRhbk(obj T, realmName string, userId string) error {
+	jsonValue, err := json.Marshal(obj)
+	if err != nil {
+		logrus.Errorf("error %+v marshalling object", err)
+		return err
+	}
+	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/users/%s", realmName, userId), "user")
 }

@@ -30,8 +30,11 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //			CreateAuthenticatorConfigFunc: func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string, executionID string) (string, error) {
 //				panic("mock out the CreateAuthenticatorConfig method")
 //			},
-//			CreateClientFunc: func(obj T, realmName string) (string, error) {
+//			CreateClientFunc: func(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error) {
 //				panic("mock out the CreateClient method")
+//			},
+//			CreateClientRhbkFunc: func(obj T, realmName string) (string, error) {
+//				panic("mock out the CreateClientRhbk method")
 //			},
 //			CreateFederatedIdentityFunc: func(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error) {
 //				panic("mock out the CreateFederatedIdentity method")
@@ -48,10 +51,13 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //			CreateIdentityProviderFunc: func(identityProvider *v1alpha1.KeycloakIdentityProvider, realmName string) (string, error) {
 //				panic("mock out the CreateIdentityProvider method")
 //			},
-//			CreateRealmFunc: func(obj T) (string, error) {
+//			CreateRealmFunc: func(realm *v1alpha1.KeycloakRealm) (string, error) {
 //				panic("mock out the CreateRealm method")
 //			},
-//			CreateUserFunc: func(obj T, realmName string) (string, error) {
+//			CreateRealmRhbkFunc: func(obj T) (string, error) {
+//				panic("mock out the CreateRealmRhbk method")
+//			},
+//			CreateUserFunc: func(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error) {
 //				panic("mock out the CreateUser method")
 //			},
 //			CreateUserClientRoleFunc: func(role *v1alpha1.KeycloakUserRole, realmName string, clientID string, userID string) (string, error) {
@@ -59,6 +65,9 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //			},
 //			CreateUserRealmRoleFunc: func(role *v1alpha1.KeycloakUserRole, realmName string, userID string) (string, error) {
 //				panic("mock out the CreateUserRealmRole method")
+//			},
+//			CreateUserRhbkFunc: func(obj T, realmName string) (string, error) {
+//				panic("mock out the CreateUserRhbk method")
 //			},
 //			DeleteAuthenticatorConfigFunc: func(configID string, realmName string) error {
 //				panic("mock out the DeleteAuthenticatorConfig method")
@@ -201,8 +210,11 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //			UpdateAuthenticatorConfigFunc: func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string) error {
 //				panic("mock out the UpdateAuthenticatorConfig method")
 //			},
-//			UpdateClientFunc: func(obj T, realmName string, clientId string) error {
+//			UpdateClientFunc: func(specClient *v1alpha1.KeycloakAPIClient, realmName string) error {
 //				panic("mock out the UpdateClient method")
+//			},
+//			UpdateClientRhbkFunc: func(obj T, realmName string, clientId string) error {
+//				panic("mock out the UpdateClientRhbk method")
 //			},
 //			UpdateEventsConfigFunc: func(realmName string, enabledEventTypes []string, eventsListeners []string) error {
 //				panic("mock out the UpdateEventsConfig method")
@@ -213,11 +225,17 @@ var _ KeycloakInterface = &KeycloakInterfaceMock{}
 //			UpdatePasswordFunc: func(user *v1alpha1.KeycloakAPIUser, realmName string, newPass string) error {
 //				panic("mock out the UpdatePassword method")
 //			},
-//			UpdateRealmFunc: func(obj T, realmName string) error {
+//			UpdateRealmFunc: func(specRealm *v1alpha1.KeycloakRealm) error {
 //				panic("mock out the UpdateRealm method")
 //			},
-//			UpdateUserFunc: func(obj T, realmName string, userId string) error {
+//			UpdateRealmRhbkFunc: func(obj T, realmName string) error {
+//				panic("mock out the UpdateRealmRhbk method")
+//			},
+//			UpdateUserFunc: func(specUser *v1alpha1.KeycloakAPIUser, realmName string) error {
 //				panic("mock out the UpdateUser method")
+//			},
+//			UpdateUserRhbkFunc: func(obj T, realmName string, userId string) error {
+//				panic("mock out the UpdateUserRhbk method")
 //			},
 //		}
 //
@@ -239,7 +257,10 @@ type KeycloakInterfaceMock struct {
 	CreateAuthenticatorConfigFunc func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string, executionID string) (string, error)
 
 	// CreateClientFunc mocks the CreateClient method.
-	CreateClientFunc func(obj T, realmName string) (string, error)
+	CreateClientFunc func(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error)
+
+	// CreateClientRhbkFunc mocks the CreateClientRhbk method.
+	CreateClientRhbkFunc func(obj T, realmName string) (string, error)
 
 	// CreateFederatedIdentityFunc mocks the CreateFederatedIdentity method.
 	CreateFederatedIdentityFunc func(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error)
@@ -257,16 +278,22 @@ type KeycloakInterfaceMock struct {
 	CreateIdentityProviderFunc func(identityProvider *v1alpha1.KeycloakIdentityProvider, realmName string) (string, error)
 
 	// CreateRealmFunc mocks the CreateRealm method.
-	CreateRealmFunc func(obj T) (string, error)
+	CreateRealmFunc func(realm *v1alpha1.KeycloakRealm) (string, error)
+
+	// CreateRealmRhbkFunc mocks the CreateRealmRhbk method.
+	CreateRealmRhbkFunc func(obj T) (string, error)
 
 	// CreateUserFunc mocks the CreateUser method.
-	CreateUserFunc func(obj T, realmName string) (string, error)
+	CreateUserFunc func(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error)
 
 	// CreateUserClientRoleFunc mocks the CreateUserClientRole method.
 	CreateUserClientRoleFunc func(role *v1alpha1.KeycloakUserRole, realmName string, clientID string, userID string) (string, error)
 
 	// CreateUserRealmRoleFunc mocks the CreateUserRealmRole method.
 	CreateUserRealmRoleFunc func(role *v1alpha1.KeycloakUserRole, realmName string, userID string) (string, error)
+
+	// CreateUserRhbkFunc mocks the CreateUserRhbk method.
+	CreateUserRhbkFunc func(obj T, realmName string) (string, error)
 
 	// DeleteAuthenticatorConfigFunc mocks the DeleteAuthenticatorConfig method.
 	DeleteAuthenticatorConfigFunc func(configID string, realmName string) error
@@ -410,7 +437,10 @@ type KeycloakInterfaceMock struct {
 	UpdateAuthenticatorConfigFunc func(authenticatorConfig *v1alpha1.AuthenticatorConfig, realmName string) error
 
 	// UpdateClientFunc mocks the UpdateClient method.
-	UpdateClientFunc func(obj T, realmName string, clientId string) error
+	UpdateClientFunc func(specClient *v1alpha1.KeycloakAPIClient, realmName string) error
+
+	// UpdateClientRhbkFunc mocks the UpdateClientRhbk method.
+	UpdateClientRhbkFunc func(obj T, realmName string, clientId string) error
 
 	// UpdateEventsConfigFunc mocks the UpdateEventsConfig method.
 	UpdateEventsConfigFunc func(realmName string, enabledEventTypes []string, eventsListeners []string) error
@@ -422,10 +452,16 @@ type KeycloakInterfaceMock struct {
 	UpdatePasswordFunc func(user *v1alpha1.KeycloakAPIUser, realmName string, newPass string) error
 
 	// UpdateRealmFunc mocks the UpdateRealm method.
-	UpdateRealmFunc func(obj T, realmName string) error
+	UpdateRealmFunc func(specRealm *v1alpha1.KeycloakRealm) error
+
+	// UpdateRealmRhbkFunc mocks the UpdateRealmRhbk method.
+	UpdateRealmRhbkFunc func(obj T, realmName string) error
 
 	// UpdateUserFunc mocks the UpdateUser method.
-	UpdateUserFunc func(obj T, realmName string, userId string) error
+	UpdateUserFunc func(specUser *v1alpha1.KeycloakAPIUser, realmName string) error
+
+	// UpdateUserRhbkFunc mocks the UpdateUserRhbk method.
+	UpdateUserRhbkFunc func(obj T, realmName string, userId string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -467,6 +503,13 @@ type KeycloakInterfaceMock struct {
 		}
 		// CreateClient holds details about calls to the CreateClient method.
 		CreateClient []struct {
+			// Client is the client argument value.
+			Client *v1alpha1.KeycloakAPIClient
+			// RealmName is the realmName argument value.
+			RealmName string
+		}
+		// CreateClientRhbk holds details about calls to the CreateClientRhbk method.
+		CreateClientRhbk []struct {
 			// Obj is the obj argument value.
 			Obj T
 			// RealmName is the realmName argument value.
@@ -517,13 +560,18 @@ type KeycloakInterfaceMock struct {
 		}
 		// CreateRealm holds details about calls to the CreateRealm method.
 		CreateRealm []struct {
+			// Realm is the realm argument value.
+			Realm *v1alpha1.KeycloakRealm
+		}
+		// CreateRealmRhbk holds details about calls to the CreateRealmRhbk method.
+		CreateRealmRhbk []struct {
 			// Obj is the obj argument value.
 			Obj T
 		}
 		// CreateUser holds details about calls to the CreateUser method.
 		CreateUser []struct {
-			// Obj is the obj argument value.
-			Obj T
+			// User is the user argument value.
+			User *v1alpha1.KeycloakAPIUser
 			// RealmName is the realmName argument value.
 			RealmName string
 		}
@@ -546,6 +594,13 @@ type KeycloakInterfaceMock struct {
 			RealmName string
 			// UserID is the userID argument value.
 			UserID string
+		}
+		// CreateUserRhbk holds details about calls to the CreateUserRhbk method.
+		CreateUserRhbk []struct {
+			// Obj is the obj argument value.
+			Obj T
+			// RealmName is the realmName argument value.
+			RealmName string
 		}
 		// DeleteAuthenticatorConfig holds details about calls to the DeleteAuthenticatorConfig method.
 		DeleteAuthenticatorConfig []struct {
@@ -890,6 +945,13 @@ type KeycloakInterfaceMock struct {
 		}
 		// UpdateClient holds details about calls to the UpdateClient method.
 		UpdateClient []struct {
+			// SpecClient is the specClient argument value.
+			SpecClient *v1alpha1.KeycloakAPIClient
+			// RealmName is the realmName argument value.
+			RealmName string
+		}
+		// UpdateClientRhbk holds details about calls to the UpdateClientRhbk method.
+		UpdateClientRhbk []struct {
 			// Obj is the obj argument value.
 			Obj T
 			// RealmName is the realmName argument value.
@@ -924,6 +986,11 @@ type KeycloakInterfaceMock struct {
 		}
 		// UpdateRealm holds details about calls to the UpdateRealm method.
 		UpdateRealm []struct {
+			// SpecRealm is the specRealm argument value.
+			SpecRealm *v1alpha1.KeycloakRealm
+		}
+		// UpdateRealmRhbk holds details about calls to the UpdateRealmRhbk method.
+		UpdateRealmRhbk []struct {
 			// Obj is the obj argument value.
 			Obj T
 			// RealmName is the realmName argument value.
@@ -931,6 +998,13 @@ type KeycloakInterfaceMock struct {
 		}
 		// UpdateUser holds details about calls to the UpdateUser method.
 		UpdateUser []struct {
+			// SpecUser is the specUser argument value.
+			SpecUser *v1alpha1.KeycloakAPIUser
+			// RealmName is the realmName argument value.
+			RealmName string
+		}
+		// UpdateUserRhbk holds details about calls to the UpdateUserRhbk method.
+		UpdateUserRhbk []struct {
 			// Obj is the obj argument value.
 			Obj T
 			// RealmName is the realmName argument value.
@@ -944,15 +1018,18 @@ type KeycloakInterfaceMock struct {
 	lockCreateAuthenticationFlow             sync.RWMutex
 	lockCreateAuthenticatorConfig            sync.RWMutex
 	lockCreateClient                         sync.RWMutex
+	lockCreateClientRhbk                     sync.RWMutex
 	lockCreateFederatedIdentity              sync.RWMutex
 	lockCreateGroup                          sync.RWMutex
 	lockCreateGroupClientRole                sync.RWMutex
 	lockCreateGroupRealmRole                 sync.RWMutex
 	lockCreateIdentityProvider               sync.RWMutex
 	lockCreateRealm                          sync.RWMutex
+	lockCreateRealmRhbk                      sync.RWMutex
 	lockCreateUser                           sync.RWMutex
 	lockCreateUserClientRole                 sync.RWMutex
 	lockCreateUserRealmRole                  sync.RWMutex
+	lockCreateUserRhbk                       sync.RWMutex
 	lockDeleteAuthenticatorConfig            sync.RWMutex
 	lockDeleteClient                         sync.RWMutex
 	lockDeleteIdentityProvider               sync.RWMutex
@@ -1001,11 +1078,14 @@ type KeycloakInterfaceMock struct {
 	lockUpdateAuthenticationExecutionForFlow sync.RWMutex
 	lockUpdateAuthenticatorConfig            sync.RWMutex
 	lockUpdateClient                         sync.RWMutex
+	lockUpdateClientRhbk                     sync.RWMutex
 	lockUpdateEventsConfig                   sync.RWMutex
 	lockUpdateIdentityProvider               sync.RWMutex
 	lockUpdatePassword                       sync.RWMutex
 	lockUpdateRealm                          sync.RWMutex
+	lockUpdateRealmRhbk                      sync.RWMutex
 	lockUpdateUser                           sync.RWMutex
+	lockUpdateUserRhbk                       sync.RWMutex
 }
 
 // AddExecutionToAuthenticatonFlow calls AddExecutionToAuthenticatonFlowFunc.
@@ -1169,9 +1249,45 @@ func (mock *KeycloakInterfaceMock) CreateAuthenticatorConfigCalls() []struct {
 }
 
 // CreateClient calls CreateClientFunc.
-func (mock *KeycloakInterfaceMock) CreateClient(obj T, realmName string) (string, error) {
+func (mock *KeycloakInterfaceMock) CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error) {
 	if mock.CreateClientFunc == nil {
 		panic("KeycloakInterfaceMock.CreateClientFunc: method is nil but KeycloakInterface.CreateClient was just called")
+	}
+	callInfo := struct {
+		Client    *v1alpha1.KeycloakAPIClient
+		RealmName string
+	}{
+		Client:    client,
+		RealmName: realmName,
+	}
+	mock.lockCreateClient.Lock()
+	mock.calls.CreateClient = append(mock.calls.CreateClient, callInfo)
+	mock.lockCreateClient.Unlock()
+	return mock.CreateClientFunc(client, realmName)
+}
+
+// CreateClientCalls gets all the calls that were made to CreateClient.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.CreateClientCalls())
+func (mock *KeycloakInterfaceMock) CreateClientCalls() []struct {
+	Client    *v1alpha1.KeycloakAPIClient
+	RealmName string
+} {
+	var calls []struct {
+		Client    *v1alpha1.KeycloakAPIClient
+		RealmName string
+	}
+	mock.lockCreateClient.RLock()
+	calls = mock.calls.CreateClient
+	mock.lockCreateClient.RUnlock()
+	return calls
+}
+
+// CreateClientRhbk calls CreateClientRhbkFunc.
+func (mock *KeycloakInterfaceMock) CreateClientRhbk(obj T, realmName string) (string, error) {
+	if mock.CreateClientRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.CreateClientRhbkFunc: method is nil but KeycloakInterface.CreateClientRhbk was just called")
 	}
 	callInfo := struct {
 		Obj       T
@@ -1180,17 +1296,17 @@ func (mock *KeycloakInterfaceMock) CreateClient(obj T, realmName string) (string
 		Obj:       obj,
 		RealmName: realmName,
 	}
-	mock.lockCreateClient.Lock()
-	mock.calls.CreateClient = append(mock.calls.CreateClient, callInfo)
-	mock.lockCreateClient.Unlock()
-	return mock.CreateClientFunc(obj, realmName)
+	mock.lockCreateClientRhbk.Lock()
+	mock.calls.CreateClientRhbk = append(mock.calls.CreateClientRhbk, callInfo)
+	mock.lockCreateClientRhbk.Unlock()
+	return mock.CreateClientRhbkFunc(obj, realmName)
 }
 
-// CreateClientCalls gets all the calls that were made to CreateClient.
+// CreateClientRhbkCalls gets all the calls that were made to CreateClientRhbk.
 // Check the length with:
 //
-//	len(mockedKeycloakInterface.CreateClientCalls())
-func (mock *KeycloakInterfaceMock) CreateClientCalls() []struct {
+//	len(mockedKeycloakInterface.CreateClientRhbkCalls())
+func (mock *KeycloakInterfaceMock) CreateClientRhbkCalls() []struct {
 	Obj       T
 	RealmName string
 } {
@@ -1198,9 +1314,9 @@ func (mock *KeycloakInterfaceMock) CreateClientCalls() []struct {
 		Obj       T
 		RealmName string
 	}
-	mock.lockCreateClient.RLock()
-	calls = mock.calls.CreateClient
-	mock.lockCreateClient.RUnlock()
+	mock.lockCreateClientRhbk.RLock()
+	calls = mock.calls.CreateClientRhbk
+	mock.lockCreateClientRhbk.RUnlock()
 	return calls
 }
 
@@ -1401,19 +1517,19 @@ func (mock *KeycloakInterfaceMock) CreateIdentityProviderCalls() []struct {
 }
 
 // CreateRealm calls CreateRealmFunc.
-func (mock *KeycloakInterfaceMock) CreateRealm(obj T) (string, error) {
+func (mock *KeycloakInterfaceMock) CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error) {
 	if mock.CreateRealmFunc == nil {
 		panic("KeycloakInterfaceMock.CreateRealmFunc: method is nil but KeycloakInterface.CreateRealm was just called")
 	}
 	callInfo := struct {
-		Obj T
+		Realm *v1alpha1.KeycloakRealm
 	}{
-		Obj: obj,
+		Realm: realm,
 	}
 	mock.lockCreateRealm.Lock()
 	mock.calls.CreateRealm = append(mock.calls.CreateRealm, callInfo)
 	mock.lockCreateRealm.Unlock()
-	return mock.CreateRealmFunc(obj)
+	return mock.CreateRealmFunc(realm)
 }
 
 // CreateRealmCalls gets all the calls that were made to CreateRealm.
@@ -1421,10 +1537,10 @@ func (mock *KeycloakInterfaceMock) CreateRealm(obj T) (string, error) {
 //
 //	len(mockedKeycloakInterface.CreateRealmCalls())
 func (mock *KeycloakInterfaceMock) CreateRealmCalls() []struct {
-	Obj T
+	Realm *v1alpha1.KeycloakRealm
 } {
 	var calls []struct {
-		Obj T
+		Realm *v1alpha1.KeycloakRealm
 	}
 	mock.lockCreateRealm.RLock()
 	calls = mock.calls.CreateRealm
@@ -1432,22 +1548,54 @@ func (mock *KeycloakInterfaceMock) CreateRealmCalls() []struct {
 	return calls
 }
 
+// CreateRealmRhbk calls CreateRealmRhbkFunc.
+func (mock *KeycloakInterfaceMock) CreateRealmRhbk(obj T) (string, error) {
+	if mock.CreateRealmRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.CreateRealmRhbkFunc: method is nil but KeycloakInterface.CreateRealmRhbk was just called")
+	}
+	callInfo := struct {
+		Obj T
+	}{
+		Obj: obj,
+	}
+	mock.lockCreateRealmRhbk.Lock()
+	mock.calls.CreateRealmRhbk = append(mock.calls.CreateRealmRhbk, callInfo)
+	mock.lockCreateRealmRhbk.Unlock()
+	return mock.CreateRealmRhbkFunc(obj)
+}
+
+// CreateRealmRhbkCalls gets all the calls that were made to CreateRealmRhbk.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.CreateRealmRhbkCalls())
+func (mock *KeycloakInterfaceMock) CreateRealmRhbkCalls() []struct {
+	Obj T
+} {
+	var calls []struct {
+		Obj T
+	}
+	mock.lockCreateRealmRhbk.RLock()
+	calls = mock.calls.CreateRealmRhbk
+	mock.lockCreateRealmRhbk.RUnlock()
+	return calls
+}
+
 // CreateUser calls CreateUserFunc.
-func (mock *KeycloakInterfaceMock) CreateUser(obj T, realmName string) (string, error) {
+func (mock *KeycloakInterfaceMock) CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error) {
 	if mock.CreateUserFunc == nil {
 		panic("KeycloakInterfaceMock.CreateUserFunc: method is nil but KeycloakInterface.CreateUser was just called")
 	}
 	callInfo := struct {
-		Obj       T
+		User      *v1alpha1.KeycloakAPIUser
 		RealmName string
 	}{
-		Obj:       obj,
+		User:      user,
 		RealmName: realmName,
 	}
 	mock.lockCreateUser.Lock()
 	mock.calls.CreateUser = append(mock.calls.CreateUser, callInfo)
 	mock.lockCreateUser.Unlock()
-	return mock.CreateUserFunc(obj, realmName)
+	return mock.CreateUserFunc(user, realmName)
 }
 
 // CreateUserCalls gets all the calls that were made to CreateUser.
@@ -1455,11 +1603,11 @@ func (mock *KeycloakInterfaceMock) CreateUser(obj T, realmName string) (string, 
 //
 //	len(mockedKeycloakInterface.CreateUserCalls())
 func (mock *KeycloakInterfaceMock) CreateUserCalls() []struct {
-	Obj       T
+	User      *v1alpha1.KeycloakAPIUser
 	RealmName string
 } {
 	var calls []struct {
-		Obj       T
+		User      *v1alpha1.KeycloakAPIUser
 		RealmName string
 	}
 	mock.lockCreateUser.RLock()
@@ -1549,6 +1697,42 @@ func (mock *KeycloakInterfaceMock) CreateUserRealmRoleCalls() []struct {
 	mock.lockCreateUserRealmRole.RLock()
 	calls = mock.calls.CreateUserRealmRole
 	mock.lockCreateUserRealmRole.RUnlock()
+	return calls
+}
+
+// CreateUserRhbk calls CreateUserRhbkFunc.
+func (mock *KeycloakInterfaceMock) CreateUserRhbk(obj T, realmName string) (string, error) {
+	if mock.CreateUserRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.CreateUserRhbkFunc: method is nil but KeycloakInterface.CreateUserRhbk was just called")
+	}
+	callInfo := struct {
+		Obj       T
+		RealmName string
+	}{
+		Obj:       obj,
+		RealmName: realmName,
+	}
+	mock.lockCreateUserRhbk.Lock()
+	mock.calls.CreateUserRhbk = append(mock.calls.CreateUserRhbk, callInfo)
+	mock.lockCreateUserRhbk.Unlock()
+	return mock.CreateUserRhbkFunc(obj, realmName)
+}
+
+// CreateUserRhbkCalls gets all the calls that were made to CreateUserRhbk.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.CreateUserRhbkCalls())
+func (mock *KeycloakInterfaceMock) CreateUserRhbkCalls() []struct {
+	Obj       T
+	RealmName string
+} {
+	var calls []struct {
+		Obj       T
+		RealmName string
+	}
+	mock.lockCreateUserRhbk.RLock()
+	calls = mock.calls.CreateUserRhbk
+	mock.lockCreateUserRhbk.RUnlock()
 	return calls
 }
 
@@ -3267,9 +3451,45 @@ func (mock *KeycloakInterfaceMock) UpdateAuthenticatorConfigCalls() []struct {
 }
 
 // UpdateClient calls UpdateClientFunc.
-func (mock *KeycloakInterfaceMock) UpdateClient(obj T, realmName string, clientId string) error {
+func (mock *KeycloakInterfaceMock) UpdateClient(specClient *v1alpha1.KeycloakAPIClient, realmName string) error {
 	if mock.UpdateClientFunc == nil {
 		panic("KeycloakInterfaceMock.UpdateClientFunc: method is nil but KeycloakInterface.UpdateClient was just called")
+	}
+	callInfo := struct {
+		SpecClient *v1alpha1.KeycloakAPIClient
+		RealmName  string
+	}{
+		SpecClient: specClient,
+		RealmName:  realmName,
+	}
+	mock.lockUpdateClient.Lock()
+	mock.calls.UpdateClient = append(mock.calls.UpdateClient, callInfo)
+	mock.lockUpdateClient.Unlock()
+	return mock.UpdateClientFunc(specClient, realmName)
+}
+
+// UpdateClientCalls gets all the calls that were made to UpdateClient.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.UpdateClientCalls())
+func (mock *KeycloakInterfaceMock) UpdateClientCalls() []struct {
+	SpecClient *v1alpha1.KeycloakAPIClient
+	RealmName  string
+} {
+	var calls []struct {
+		SpecClient *v1alpha1.KeycloakAPIClient
+		RealmName  string
+	}
+	mock.lockUpdateClient.RLock()
+	calls = mock.calls.UpdateClient
+	mock.lockUpdateClient.RUnlock()
+	return calls
+}
+
+// UpdateClientRhbk calls UpdateClientRhbkFunc.
+func (mock *KeycloakInterfaceMock) UpdateClientRhbk(obj T, realmName string, clientId string) error {
+	if mock.UpdateClientRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.UpdateClientRhbkFunc: method is nil but KeycloakInterface.UpdateClientRhbk was just called")
 	}
 	callInfo := struct {
 		Obj       T
@@ -3280,17 +3500,17 @@ func (mock *KeycloakInterfaceMock) UpdateClient(obj T, realmName string, clientI
 		RealmName: realmName,
 		ClientId:  clientId,
 	}
-	mock.lockUpdateClient.Lock()
-	mock.calls.UpdateClient = append(mock.calls.UpdateClient, callInfo)
-	mock.lockUpdateClient.Unlock()
-	return mock.UpdateClientFunc(obj, realmName, clientId)
+	mock.lockUpdateClientRhbk.Lock()
+	mock.calls.UpdateClientRhbk = append(mock.calls.UpdateClientRhbk, callInfo)
+	mock.lockUpdateClientRhbk.Unlock()
+	return mock.UpdateClientRhbkFunc(obj, realmName, clientId)
 }
 
-// UpdateClientCalls gets all the calls that were made to UpdateClient.
+// UpdateClientRhbkCalls gets all the calls that were made to UpdateClientRhbk.
 // Check the length with:
 //
-//	len(mockedKeycloakInterface.UpdateClientCalls())
-func (mock *KeycloakInterfaceMock) UpdateClientCalls() []struct {
+//	len(mockedKeycloakInterface.UpdateClientRhbkCalls())
+func (mock *KeycloakInterfaceMock) UpdateClientRhbkCalls() []struct {
 	Obj       T
 	RealmName string
 	ClientId  string
@@ -3300,9 +3520,9 @@ func (mock *KeycloakInterfaceMock) UpdateClientCalls() []struct {
 		RealmName string
 		ClientId  string
 	}
-	mock.lockUpdateClient.RLock()
-	calls = mock.calls.UpdateClient
-	mock.lockUpdateClient.RUnlock()
+	mock.lockUpdateClientRhbk.RLock()
+	calls = mock.calls.UpdateClientRhbk
+	mock.lockUpdateClientRhbk.RUnlock()
 	return calls
 }
 
@@ -3423,9 +3643,41 @@ func (mock *KeycloakInterfaceMock) UpdatePasswordCalls() []struct {
 }
 
 // UpdateRealm calls UpdateRealmFunc.
-func (mock *KeycloakInterfaceMock) UpdateRealm(obj T, realmName string) error {
+func (mock *KeycloakInterfaceMock) UpdateRealm(specRealm *v1alpha1.KeycloakRealm) error {
 	if mock.UpdateRealmFunc == nil {
 		panic("KeycloakInterfaceMock.UpdateRealmFunc: method is nil but KeycloakInterface.UpdateRealm was just called")
+	}
+	callInfo := struct {
+		SpecRealm *v1alpha1.KeycloakRealm
+	}{
+		SpecRealm: specRealm,
+	}
+	mock.lockUpdateRealm.Lock()
+	mock.calls.UpdateRealm = append(mock.calls.UpdateRealm, callInfo)
+	mock.lockUpdateRealm.Unlock()
+	return mock.UpdateRealmFunc(specRealm)
+}
+
+// UpdateRealmCalls gets all the calls that were made to UpdateRealm.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.UpdateRealmCalls())
+func (mock *KeycloakInterfaceMock) UpdateRealmCalls() []struct {
+	SpecRealm *v1alpha1.KeycloakRealm
+} {
+	var calls []struct {
+		SpecRealm *v1alpha1.KeycloakRealm
+	}
+	mock.lockUpdateRealm.RLock()
+	calls = mock.calls.UpdateRealm
+	mock.lockUpdateRealm.RUnlock()
+	return calls
+}
+
+// UpdateRealmRhbk calls UpdateRealmRhbkFunc.
+func (mock *KeycloakInterfaceMock) UpdateRealmRhbk(obj T, realmName string) error {
+	if mock.UpdateRealmRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.UpdateRealmRhbkFunc: method is nil but KeycloakInterface.UpdateRealmRhbk was just called")
 	}
 	callInfo := struct {
 		Obj       T
@@ -3434,17 +3686,17 @@ func (mock *KeycloakInterfaceMock) UpdateRealm(obj T, realmName string) error {
 		Obj:       obj,
 		RealmName: realmName,
 	}
-	mock.lockUpdateRealm.Lock()
-	mock.calls.UpdateRealm = append(mock.calls.UpdateRealm, callInfo)
-	mock.lockUpdateRealm.Unlock()
-	return mock.UpdateRealmFunc(obj, realmName)
+	mock.lockUpdateRealmRhbk.Lock()
+	mock.calls.UpdateRealmRhbk = append(mock.calls.UpdateRealmRhbk, callInfo)
+	mock.lockUpdateRealmRhbk.Unlock()
+	return mock.UpdateRealmRhbkFunc(obj, realmName)
 }
 
-// UpdateRealmCalls gets all the calls that were made to UpdateRealm.
+// UpdateRealmRhbkCalls gets all the calls that were made to UpdateRealmRhbk.
 // Check the length with:
 //
-//	len(mockedKeycloakInterface.UpdateRealmCalls())
-func (mock *KeycloakInterfaceMock) UpdateRealmCalls() []struct {
+//	len(mockedKeycloakInterface.UpdateRealmRhbkCalls())
+func (mock *KeycloakInterfaceMock) UpdateRealmRhbkCalls() []struct {
 	Obj       T
 	RealmName string
 } {
@@ -3452,16 +3704,52 @@ func (mock *KeycloakInterfaceMock) UpdateRealmCalls() []struct {
 		Obj       T
 		RealmName string
 	}
-	mock.lockUpdateRealm.RLock()
-	calls = mock.calls.UpdateRealm
-	mock.lockUpdateRealm.RUnlock()
+	mock.lockUpdateRealmRhbk.RLock()
+	calls = mock.calls.UpdateRealmRhbk
+	mock.lockUpdateRealmRhbk.RUnlock()
 	return calls
 }
 
 // UpdateUser calls UpdateUserFunc.
-func (mock *KeycloakInterfaceMock) UpdateUser(obj T, realmName string, userId string) error {
+func (mock *KeycloakInterfaceMock) UpdateUser(specUser *v1alpha1.KeycloakAPIUser, realmName string) error {
 	if mock.UpdateUserFunc == nil {
 		panic("KeycloakInterfaceMock.UpdateUserFunc: method is nil but KeycloakInterface.UpdateUser was just called")
+	}
+	callInfo := struct {
+		SpecUser  *v1alpha1.KeycloakAPIUser
+		RealmName string
+	}{
+		SpecUser:  specUser,
+		RealmName: realmName,
+	}
+	mock.lockUpdateUser.Lock()
+	mock.calls.UpdateUser = append(mock.calls.UpdateUser, callInfo)
+	mock.lockUpdateUser.Unlock()
+	return mock.UpdateUserFunc(specUser, realmName)
+}
+
+// UpdateUserCalls gets all the calls that were made to UpdateUser.
+// Check the length with:
+//
+//	len(mockedKeycloakInterface.UpdateUserCalls())
+func (mock *KeycloakInterfaceMock) UpdateUserCalls() []struct {
+	SpecUser  *v1alpha1.KeycloakAPIUser
+	RealmName string
+} {
+	var calls []struct {
+		SpecUser  *v1alpha1.KeycloakAPIUser
+		RealmName string
+	}
+	mock.lockUpdateUser.RLock()
+	calls = mock.calls.UpdateUser
+	mock.lockUpdateUser.RUnlock()
+	return calls
+}
+
+// UpdateUserRhbk calls UpdateUserRhbkFunc.
+func (mock *KeycloakInterfaceMock) UpdateUserRhbk(obj T, realmName string, userId string) error {
+	if mock.UpdateUserRhbkFunc == nil {
+		panic("KeycloakInterfaceMock.UpdateUserRhbkFunc: method is nil but KeycloakInterface.UpdateUserRhbk was just called")
 	}
 	callInfo := struct {
 		Obj       T
@@ -3472,17 +3760,17 @@ func (mock *KeycloakInterfaceMock) UpdateUser(obj T, realmName string, userId st
 		RealmName: realmName,
 		UserId:    userId,
 	}
-	mock.lockUpdateUser.Lock()
-	mock.calls.UpdateUser = append(mock.calls.UpdateUser, callInfo)
-	mock.lockUpdateUser.Unlock()
-	return mock.UpdateUserFunc(obj, realmName, userId)
+	mock.lockUpdateUserRhbk.Lock()
+	mock.calls.UpdateUserRhbk = append(mock.calls.UpdateUserRhbk, callInfo)
+	mock.lockUpdateUserRhbk.Unlock()
+	return mock.UpdateUserRhbkFunc(obj, realmName, userId)
 }
 
-// UpdateUserCalls gets all the calls that were made to UpdateUser.
+// UpdateUserRhbkCalls gets all the calls that were made to UpdateUserRhbk.
 // Check the length with:
 //
-//	len(mockedKeycloakInterface.UpdateUserCalls())
-func (mock *KeycloakInterfaceMock) UpdateUserCalls() []struct {
+//	len(mockedKeycloakInterface.UpdateUserRhbkCalls())
+func (mock *KeycloakInterfaceMock) UpdateUserRhbkCalls() []struct {
 	Obj       T
 	RealmName string
 	UserId    string
@@ -3492,8 +3780,8 @@ func (mock *KeycloakInterfaceMock) UpdateUserCalls() []struct {
 		RealmName string
 		UserId    string
 	}
-	mock.lockUpdateUser.RLock()
-	calls = mock.calls.UpdateUser
-	mock.lockUpdateUser.RUnlock()
+	mock.lockUpdateUserRhbk.RLock()
+	calls = mock.calls.UpdateUserRhbk
+	mock.lockUpdateUserRhbk.RUnlock()
 	return calls
 }
