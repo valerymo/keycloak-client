@@ -847,3 +847,52 @@ func TestClient_login(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, client.token, "dummy")
 }
+
+func TestClient_CreateRealmRHBK(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, RealmsCreatePath, req.URL.Path)
+		w.WriteHeader(201)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client := Client{
+		requester: server.Client(),
+		URL:       server.URL,
+		token:     "dummy",
+	}
+
+	realm := getDummyRealm()
+	_, err := client.CreateRealmRhbk(realm)
+	assert.NoError(t, err)
+}
+
+func TestClient_CreateUserRHBK(t *testing.T) {
+	// given
+	user := getDummyUser()
+	realm := getDummyRealm()
+	dummyUserID := "dummy-user-id"
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, fmt.Sprintf(UserCreatePath, realm.Spec.Realm.Realm), req.URL.Path)
+		locationURL := fmt.Sprintf("http://dummy-keycloak-host/%s", UserGetPath)
+		w.Header().Set("Location", fmt.Sprintf(locationURL, realm.Spec.Realm.Realm, dummyUserID))
+		w.WriteHeader(201)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client := Client{
+		requester: server.Client(),
+		URL:       server.URL,
+		token:     "dummy",
+	}
+
+	// when
+	uid, err := client.CreateUserRhbk(user, realm.Spec.Realm.Realm)
+
+	// then
+	// correct path expected on httptest server
+	assert.NoError(t, err)
+	assert.Equal(t, uid, dummyUserID)
+}
