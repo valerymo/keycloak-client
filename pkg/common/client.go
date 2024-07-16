@@ -1144,16 +1144,16 @@ func defaultRequester() Requester {
 type KeycloakInterface interface {
 	Ping() error
 
-	CreateRealmRhbk(obj T) (string, error)
-	UpdateRealmRhbk(obj T, realmName string) error
+	CreateRealmRhbk(obj T, additionalPath string) (string, error)
+	UpdateRealmRhbk(obj T, realmName string, additionalPath string) error
 	CreateRealm(realm *v1alpha1.KeycloakRealm) (string, error)
 	GetRealm(realmName string) (*v1alpha1.KeycloakRealm, error)
 	UpdateRealm(specRealm *v1alpha1.KeycloakRealm) error
 	DeleteRealm(realmName string) error
 	ListRealms() ([]*v1alpha1.KeycloakAPIRealm, error)
 
-	CreateClientRhbk(obj T, realmName string) (string, error)
-	UpdateClientRhbk(obj T, realmName string, clientId string) error
+	CreateClientRhbk(obj T, realmName string, additionalPath string) (string, error)
+	UpdateClientRhbk(obj T, realmName string, clientId string, additionalPath string) error
 	CreateClient(client *v1alpha1.KeycloakAPIClient, realmName string) (string, error)
 	GetClient(clientID, realmName string) (*v1alpha1.KeycloakAPIClient, error)
 	GetClientSecret(clientID, realmName string) (string, error)
@@ -1162,8 +1162,8 @@ type KeycloakInterface interface {
 	DeleteClient(clientID, realmName string) error
 	ListClients(realmName string) ([]*v1alpha1.KeycloakAPIClient, error)
 
-	CreateUserRhbk(obj T, realmName string) (string, error)
-	UpdateUserRhbk(obj T, realmName string, userId string) error
+	CreateUserRhbk(obj T, realmName string, additionalPath string) (string, error)
+	UpdateUserRhbk(obj T, realmName string, userId string, additionalPath string) error
 	CreateUser(user *v1alpha1.KeycloakAPIUser, realmName string) (string, error)
 	CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error)
 	RemoveFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) error
@@ -1269,10 +1269,16 @@ func (i *LocalConfigKeycloakFactory) AuthenticatedClient(kc v1alpha1.Keycloak) (
 	return client, nil
 }
 
-func (c *Client) sendCreateRequest(jsonValue []byte, resourcePath, resourceName string) (string, error) {
+func (c *Client) sendCreateRequest(jsonValue []byte, additionalPath, resourcePath, resourceName string) (string, error) {
+	url := ""
+	if additionalPath != "" {
+		url = fmt.Sprintf("%s/%s/%s", c.URL, additionalPath, resourcePath)
+	} else {
+		url = fmt.Sprintf("%s/%s", c.URL, resourcePath)
+	}
 	req, err := http.NewRequest(
 		"POST",
-		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		url,
 		bytes.NewBuffer(jsonValue),
 	)
 	if err != nil {
@@ -1304,10 +1310,16 @@ func (c *Client) sendCreateRequest(jsonValue []byte, resourcePath, resourceName 
 	return uid, nil
 }
 
-func (c *Client) sendUpdateRequest(jsonValue []byte, resourcePath, resourceName string) error {
+func (c *Client) sendUpdateRequest(jsonValue []byte, additionalPath, resourcePath, resourceName string) error {
+	url := ""
+	if additionalPath != "" {
+		url = fmt.Sprintf("%s/%s/%s", c.URL, additionalPath, resourcePath)
+	} else {
+		url = fmt.Sprintf("%s/%s", c.URL, resourcePath)
+	}
 	req, err := http.NewRequest(
 		"PUT",
-		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		url,
 		bytes.NewBuffer(jsonValue),
 	)
 	if err != nil {
@@ -1331,56 +1343,56 @@ func (c *Client) sendUpdateRequest(jsonValue []byte, resourcePath, resourceName 
 	return nil
 }
 
-func (c *Client) CreateRealmRhbk(obj T) (string, error) {
+func (c *Client) CreateRealmRhbk(obj T, additionalPath string) (string, error) {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return "", nil
 	}
-	return c.sendCreateRequest(jsonValue, "realms", "realm")
+	return c.sendCreateRequest(jsonValue, additionalPath, "realms", "realm")
 }
 
-func (c *Client) CreateClientRhbk(obj T, realmName string) (string, error) {
+func (c *Client) CreateClientRhbk(obj T, realmName string, additionalPath string) (string, error) {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return "", nil
 	}
-	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/clients", realmName), "client")
+	return c.sendCreateRequest(jsonValue, additionalPath, fmt.Sprintf("realms/%s/clients", realmName), "client")
 }
 
-func (c *Client) CreateUserRhbk(obj T, realmName string) (string, error) {
+func (c *Client) CreateUserRhbk(obj T, realmName string, additionalPath string) (string, error) {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return "", nil
 	}
-	return c.sendCreateRequest(jsonValue, fmt.Sprintf("realms/%s/users", realmName), "user")
+	return c.sendCreateRequest(jsonValue, additionalPath, fmt.Sprintf("realms/%s/users", realmName), "user")
 }
 
-func (c *Client) UpdateRealmRhbk(obj T, realmName string) error {
+func (c *Client) UpdateRealmRhbk(obj T, realmName string, additionalPath string) error {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return err
 	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s", realmName), "realm") //realm Name, not id?
+	return c.sendUpdateRequest(jsonValue, additionalPath, fmt.Sprintf("realms/%s", realmName), "realm") //realm Name, not id?
 }
 
-func (c *Client) UpdateClientRhbk(obj T, realmName string, clientId string) error {
+func (c *Client) UpdateClientRhbk(obj T, realmName string, clientId string, additionalPath string) error {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return err
 	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/clients/%s", realmName, clientId), "client")
+	return c.sendUpdateRequest(jsonValue, additionalPath, fmt.Sprintf("realms/%s/clients/%s", realmName, clientId), "client")
 }
 
-func (c *Client) UpdateUserRhbk(obj T, realmName string, userId string) error {
+func (c *Client) UpdateUserRhbk(obj T, realmName string, userId string, additionalPath string) error {
 	jsonValue, err := json.Marshal(obj)
 	if err != nil {
 		logrus.Errorf("error %+v marshalling object", err)
 		return err
 	}
-	return c.sendUpdateRequest(jsonValue, fmt.Sprintf("realms/%s/users/%s", realmName, userId), "user")
+	return c.sendUpdateRequest(jsonValue, additionalPath, fmt.Sprintf("realms/%s/users/%s", realmName, userId), "user")
 }
